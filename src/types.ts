@@ -13,6 +13,12 @@ export type TestId =
   | 'grip_hang'
   | 'bench'
   | 'deadlift'
+  | 'reaction'
+  | 'finger_tap'
+  | 'balance'
+  | 'sprint20'
+  | 'shuttle_5105'
+  | 'line_hops'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -20,6 +26,9 @@ export type InputType =
   | 'distance_cm'
   | 'duration_s'
   | 'load_kg'
+  | 'duration_ms' // in-app reaction-time mini-game
+  | 'tap_count' // in-app finger-tap mini-game
+  | 'count' // plain manual rep/count entry, no bodyweight formula (e.g. line hops)
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -72,7 +81,7 @@ export interface StatTestGroup {
 
 export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; implemented: boolean }> = {
   STR: { label: 'Strength', tagline: 'Absolute force & power', implemented: true },
-  DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: false },
+  DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
   CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: false },
 }
 
@@ -87,6 +96,12 @@ export const emptyTestsState = (): TestsState => ({
   grip_hang: { history: [] },
   bench: { history: [] },
   deadlift: { history: [] },
+  reaction: { history: [] },
+  finger_tap: { history: [] },
+  balance: { history: [] },
+  sprint20: { history: [] },
+  shuttle_5105: { history: [] },
+  line_hops: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

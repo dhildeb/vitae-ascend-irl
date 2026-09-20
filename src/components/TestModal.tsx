@@ -4,6 +4,8 @@ import { scoreTest, estimatePushKg, estimatePullKg } from '../benchmarks'
 import type { WeightUnit } from '../units'
 import { toKg, fromKg, loadUnitPref, saveUnitPref } from '../units'
 import Stopwatch from './Stopwatch'
+import ReactionTest from './ReactionTest'
+import FingerTapTest from './FingerTapTest'
 
 interface TestModalProps {
   def: TestDef
@@ -20,6 +22,9 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isDistance = def.inputType === 'distance_cm'
   const isLoad = def.inputType === 'load_kg'
   const isDuration = def.inputType === 'duration_s'
+  const isCount = def.inputType === 'count'
+  const isReactionGame = def.inputType === 'duration_ms'
+  const isTapGame = def.inputType === 'tap_count'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -84,7 +89,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
           </p>
         )}
 
-        {(isRepBased || isDistance || isLoad) && (
+        {(isRepBased || isDistance || isLoad || isCount) && (
           <form className="modal-form" onSubmit={handleManualSubmit}>
             <label htmlFor="raw-value">
               Result <span className="modal-unit">({isLoad ? unit : def.unit})</span>
@@ -137,6 +142,8 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         )}
 
         {isDuration && <Stopwatch onCapture={commit} />}
+        {isReactionGame && <ReactionTest onComplete={commit} />}
+        {isTapGame && <FingerTapTest onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>

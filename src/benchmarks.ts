@@ -169,6 +169,80 @@ const deadliftAnchors: AnchorPoint[] = [
   { raw: 350, score: 20 },
 ]
 
+// ---------- DEXTERITY ----------
+
+const reactionAnchors: AnchorPoint[] = [
+  { raw: 180, score: 20 },
+  { raw: 210, score: 18 },
+  { raw: 240, score: 16 },
+  { raw: 265, score: 14 },
+  { raw: 280, score: 12 },
+  { raw: 300, score: 10 },
+  { raw: 340, score: 8 },
+  { raw: 400, score: 5 },
+  { raw: 480, score: 3 },
+]
+
+const fingerTapAnchors: AnchorPoint[] = [
+  { raw: 25, score: 3 },
+  { raw: 32, score: 5 },
+  { raw: 42, score: 8 },
+  { raw: 52, score: 10 },
+  { raw: 58, score: 12 },
+  { raw: 65, score: 14 },
+  { raw: 72, score: 16 },
+  { raw: 80, score: 18 },
+  { raw: 90, score: 20 },
+]
+
+const balanceAnchors: AnchorPoint[] = [
+  { raw: 2, score: 3 },
+  { raw: 4, score: 5 },
+  { raw: 8, score: 8 },
+  { raw: 12, score: 10 },
+  { raw: 18, score: 12 },
+  { raw: 25, score: 14 },
+  { raw: 35, score: 16 },
+  { raw: 45, score: 18 },
+  { raw: 60, score: 20 },
+]
+
+const sprint20Anchors: AnchorPoint[] = [
+  { raw: 2.65, score: 20 },
+  { raw: 2.85, score: 18 },
+  { raw: 3.05, score: 16 },
+  { raw: 3.3, score: 14 },
+  { raw: 3.6, score: 12 },
+  { raw: 3.9, score: 10 },
+  { raw: 4.3, score: 8 },
+  { raw: 5.0, score: 5 },
+  { raw: 5.5, score: 3 },
+]
+
+const shuttleAnchors: AnchorPoint[] = [
+  { raw: 3.8, score: 20 },
+  { raw: 4.15, score: 18 },
+  { raw: 4.5, score: 16 },
+  { raw: 4.9, score: 14 },
+  { raw: 5.3, score: 12 },
+  { raw: 5.8, score: 10 },
+  { raw: 6.3, score: 8 },
+  { raw: 7.2, score: 5 },
+  { raw: 8.0, score: 3 },
+]
+
+const lineHopsAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 25, score: 5 },
+  { raw: 35, score: 8 },
+  { raw: 45, score: 10 },
+  { raw: 55, score: 12 },
+  { raw: 65, score: 14 },
+  { raw: 78, score: 16 },
+  { raw: 92, score: 18 },
+  { raw: 110, score: 20 },
+]
+
 export const TEST_DEFS: Record<TestId, TestDef> = {
   pushups: {
     id: 'pushups',
@@ -262,6 +336,72 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     optional: true,
     anchors: deadliftAnchors,
   },
+  reaction: {
+    id: 'reaction',
+    label: 'Reaction Time',
+    unit: 'ms',
+    inputType: 'duration_ms',
+    hint: 'Average of 3 trials, measured in-app.',
+    dataQuality: 'moderate',
+    source: 'Lab-average visual reaction time (~190ms), adjusted for browser input latency',
+    anchors: reactionAnchors,
+  },
+  finger_tap: {
+    id: 'finger_tap',
+    label: 'Finger Tap Speed',
+    unit: 'taps/10s',
+    inputType: 'tap_count',
+    hint: 'Tap as fast as possible with one finger for 10 seconds, measured in-app.',
+    dataQuality: 'strong',
+    source: 'Halstead-Reitan Finger Tapping Test clinical norms',
+    anchors: fingerTapAnchors,
+  },
+  balance: {
+    id: 'balance',
+    label: 'Single-Leg Balance',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Stand on one leg, hands on hips, eyes closed. Time until your raised foot touches down or your hands leave your hips. Measured in-app.',
+    dataQuality: 'thin',
+    source: 'General clinical balance-testing benchmarks — the least standardized test in this battery',
+    anchors: balanceAnchors,
+  },
+  sprint20: {
+    id: 'sprint20',
+    label: '20m Sprint',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'All-out sprint over 20m (about 22 yards) from a standing start. Measured in-app via stopwatch — start/stop lag is a known source of imprecision.',
+    dataQuality: 'moderate',
+    source: 'General-population sprint-speed research, converted to an estimated 20m time',
+    anchors: sprint20Anchors,
+  },
+  shuttle_5105: {
+    id: 'shuttle_5105',
+    label: '5-10-5 Shuttle Run',
+    shortLabel: 'Shuttle Run',
+    altGroupLabel: 'Agility',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Sprint 5 yards, touch the line, sprint 10 yards the other way, touch, sprint 5 yards back to start. Needs ~10 yards of clear space and 2-3 markers.',
+    dataQuality: 'thin',
+    source: 'Estimated from trained-athlete norms — no general-population baseline is published',
+    optional: true,
+    anchors: shuttleAnchors,
+  },
+  line_hops: {
+    id: 'line_hops',
+    label: 'Line Hops',
+    shortLabel: 'Line Hops',
+    altGroupLabel: 'Agility',
+    unit: 'hops/30s',
+    inputType: 'count',
+    hint: 'Hop side to side over a line or rope on the floor, both feet together, for 30 seconds. Count total hops. No-space alternative to the shuttle run.',
+    dataQuality: 'thin',
+    source: 'Estimated benchmark — least standardized test in the battery',
+    optional: true,
+    anchors: lineHopsAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -272,6 +412,10 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
       ['broadjump', 'vertical_jump'],
     ],
     bonus: ['bench', 'deadlift'],
+  },
+  DEX: {
+    core: ['reaction', 'finger_tap', 'balance', 'sprint20'],
+    alternatives: [['shuttle_5105', 'line_hops']],
   },
 }
 
