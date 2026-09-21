@@ -67,17 +67,24 @@ export default function ReactionTest({ onComplete }: ReactionTestProps) {
           : 'Too soon — click to retry this trial'
 
   return (
-    <div className="reaction-test">
+    <div className="flex flex-col items-center gap-[14px] pt-4">
       <button
         type="button"
-        className={`reaction-pad reaction-pad--${phase}`}
+        className={`h-[140px] w-full rounded-[4px] border-none text-base font-semibold text-[#efe7d8] transition-colors ${
+          phase === 'waiting' ? 'bg-[#a33b2e]' : phase === 'go' ? 'bg-[#3f7a4f]' : phase === 'too-soon' ? 'bg-[#832d22]' : 'bg-[#9c7a3c]'
+        }`}
         onClick={handleClick}
       >
         {label}
       </button>
-      <div className="reaction-trials">
+      <div className="flex gap-2.5">
         {Array.from({ length: TRIALS_NEEDED }).map((_, i) => (
-          <span key={i} className={`reaction-pip ${i < trials.length ? 'reaction-pip--done' : ''}`}>
+          <span
+            key={i}
+            className={`font-mono text-[12px] rounded-[3px] border px-2 py-1 ${
+              i < trials.length ? 'border-[#26221c] text-[#26221c]' : 'border-[#cdbd98] text-[#948965]'
+            }`}
+          >
             {i < trials.length ? `${Math.round(trials[i])}ms` : '—'}
           </span>
         ))}

@@ -87,33 +87,33 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const hrDrop = hrDropPreview()
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <span className="modal-eyebrow">
-            {def.label} test {def.optional && <span className="modal-optional-tag">optional</span>}
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-[rgba(15,16,24,0.72)] p-6" onClick={onClose}>
+      <div className="w-full max-w-[420px] rounded-[3px] border-t-[4px] border-[#a33b2e] bg-[#efe7d8] p-7 text-[#26221c]" onClick={(e) => e.stopPropagation()}>
+        <div className="relative mb-1.5">
+          <span className="font-mono text-[12px] font-bold tracking-[0.06em] text-[#a33b2e]">
+            {def.label} test {def.optional && <span className="ml-1.5 rounded-full bg-[#9c7a3c] px-1.5 py-0.5 text-[10px] uppercase tracking-[0.04em] text-[#efe7d8]">optional</span>}
           </span>
-          <h2>{def.label}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close">
+          <h2 className="mt-1 text-[26px] text-[#26221c]" style={{ fontFamily: '"Spectral", Georgia, serif', fontWeight: 500 }}>{def.label}</h2>
+          <button className="absolute -right-1.5 -top-1.5 text-[26px] leading-none text-[#26221c]" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
 
-        <p className="modal-hint">{def.hint}</p>
+        <p className="mb-[22px] text-[14px] leading-6 text-[#574f40]">{def.hint}</p>
 
         {def.dataQuality === 'thin' && (
-          <p className="modal-caveat">
-            Heads up: this test's benchmarks are the least well-established in the battery — treat the score as a
+          <p className="mb-4 border-l-2 border-[#a33b2e] bg-[rgba(163,59,46,0.08)] px-2.5 py-2 text-[12.5px] leading-5 text-[#832d22]">
+            Heads up: this test&apos;s benchmarks are the least well-established in the battery — treat the score as a
             rough estimate.
           </p>
         )}
 
         {(isRepBased || isDistance || isLoad || isCount) && (
-          <form className="modal-form" onSubmit={handleManualSubmit}>
-            <label htmlFor="raw-value">
-              Result <span className="modal-unit">({isLoad ? unit : def.unit})</span>
+          <form className="flex flex-col gap-2" onSubmit={handleManualSubmit}>
+            <label htmlFor="raw-value" className="text-[13px] font-semibold text-[#26221c]">
+              Result <span className="font-normal text-[#7a705d]">({isLoad ? unit : def.unit})</span>
             </label>
-            <div className={isLoad ? 'weight-input-row' : undefined}>
+            <div className={isLoad ? 'flex items-stretch gap-2' : ''}>
               <input
                 id="raw-value"
                 type="number"
@@ -124,19 +124,24 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="0"
+                className="w-full rounded-[3px] border border-[#cdbd98] bg-[#fbf8f1] px-[12px] py-[10px] font-mono text-[20px] text-[#26221c] focus:outline-none focus:ring-2 focus:ring-[#a33b2e] focus:ring-offset-2"
               />
               {isLoad && (
-                <div className="unit-toggle">
+                <div className="flex shrink-0 overflow-hidden rounded-[3px] border border-[#cdbd98]">
                   <button
                     type="button"
-                    className={`unit-option ${unit === 'kg' ? 'unit-option--active' : ''}`}
+                    className={`px-[14px] py-[10px] font-mono text-[13px] font-bold ${
+                      unit === 'kg' ? 'bg-[#a33b2e] text-[#efe7d8]' : 'bg-[#fbf8f1] text-[#8a7f68]'
+                    }`}
                     onClick={() => handleUnitChange('kg')}
                   >
                     kg
                   </button>
                   <button
                     type="button"
-                    className={`unit-option ${unit === 'lb' ? 'unit-option--active' : ''}`}
+                    className={`px-[14px] py-[10px] font-mono text-[13px] font-bold ${
+                      unit === 'lb' ? 'bg-[#a33b2e] text-[#efe7d8]' : 'bg-[#fbf8f1] text-[#8a7f68]'
+                    }`}
                     onClick={() => handleUnitChange('lb')}
                   >
                     lb
@@ -145,25 +150,29 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
               )}
             </div>
             {preview !== null && (
-              <p className="modal-derived">
-                ≈ <strong>{preview.toFixed(1)} kg</strong> estimated absolute load
+              <p className="-mt-1 mb-3 font-mono text-[13px] text-[#6b6153]">
+                ≈ <strong className="text-[#26221c]">{preview.toFixed(1)} kg</strong> estimated absolute load
               </p>
             )}
             {loadPreview !== null && (
-              <p className="modal-derived">
-                = <strong>{loadPreview.toFixed(1)} kg</strong>
+              <p className="-mt-1 mb-3 font-mono text-[13px] text-[#6b6153]">
+                = <strong className="text-[#26221c]">{loadPreview.toFixed(1)} kg</strong>
               </p>
             )}
-            <button type="submit" className="btn btn-primary" disabled={inputValue === ''}>
+            <button
+              type="submit"
+              className="mt-1 rounded-[3px] bg-[#a33b2e] px-[18px] py-[11px] text-sm font-semibold text-[#efe7d8] transition-colors hover:bg-[#832d22] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={inputValue === ''}
+            >
               Save Score
             </button>
           </form>
         )}
 
         {isHrRecovery && (
-          <form className="modal-form" onSubmit={handleHrRecoverySubmit}>
-            <label htmlFor="hr-peak">
-              Peak pulse, right after stopping <span className="modal-unit">(bpm)</span>
+          <form className="flex flex-col gap-2" onSubmit={handleHrRecoverySubmit}>
+            <label htmlFor="hr-peak" className="text-[13px] font-semibold text-[#26221c]">
+              Peak pulse, right after stopping <span className="font-normal text-[#7a705d]">(bpm)</span>
             </label>
             <input
               id="hr-peak"
@@ -175,9 +184,10 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="e.g. 150"
+              className="w-full rounded-[3px] border border-[#cdbd98] bg-[#fbf8f1] px-[12px] py-[10px] font-mono text-[20px] text-[#26221c] focus:outline-none focus:ring-2 focus:ring-[#a33b2e] focus:ring-offset-2"
             />
-            <label htmlFor="hr-recovery">
-              Pulse 60 seconds later <span className="modal-unit">(bpm)</span>
+            <label htmlFor="hr-recovery" className="text-[13px] font-semibold text-[#26221c]">
+              Pulse 60 seconds later <span className="font-normal text-[#7a705d]">(bpm)</span>
             </label>
             <input
               id="hr-recovery"
@@ -188,13 +198,18 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
               value={recoveryValue}
               onChange={(e) => setRecoveryValue(e.target.value)}
               placeholder="e.g. 122"
+              className="w-full rounded-[3px] border border-[#cdbd98] bg-[#fbf8f1] px-[12px] py-[10px] font-mono text-[20px] text-[#26221c] focus:outline-none focus:ring-2 focus:ring-[#a33b2e] focus:ring-offset-2"
             />
             {hrDrop !== null && (
-              <p className="modal-derived">
-                = <strong>{hrDrop} bpm</strong> drop
+              <p className="-mt-1 mb-3 font-mono text-[13px] text-[#6b6153]">
+                = <strong className="text-[#26221c]">{hrDrop} bpm</strong> drop
               </p>
             )}
-            <button type="submit" className="btn btn-primary" disabled={inputValue === '' || recoveryValue === ''}>
+            <button
+              type="submit"
+              className="mt-1 rounded-[3px] bg-[#a33b2e] px-[18px] py-[11px] text-sm font-semibold text-[#efe7d8] transition-colors hover:bg-[#832d22] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={inputValue === '' || recoveryValue === ''}
+            >
               Save Score
             </button>
           </form>
@@ -204,7 +219,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isReactionGame && <ReactionTest onComplete={commit} />}
         {isTapGame && <FingerTapTest onComplete={commit} />}
 
-        <p className="modal-source">Source: {def.source}</p>
+        <p className="mt-5 text-[11px] text-[#948965]">Source: {def.source}</p>
       </div>
     </div>
   )

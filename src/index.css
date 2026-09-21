@@ -1,3 +1,5 @@
+@import 'tailwindcss';
+
 :root {
   --ink: #1b1e2b;
   --ink-soft: #242838;
@@ -19,12 +21,22 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
   background: var(--ink);
   color: var(--mist);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
 }
 
 .page {
@@ -204,8 +216,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Modal */
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -306,8 +316,6 @@ body {
   margin-top: 18px;
 }
 
-/* Reaction test */
-
 .reaction-test {
   display: flex;
   flex-direction: column;
@@ -360,8 +368,6 @@ body {
   border-color: var(--charcoal);
 }
 
-/* Finger tap test */
-
 .tap-test {
   display: flex;
   flex-direction: column;
@@ -410,8 +416,6 @@ input:focus-visible {
   outline: 2px solid var(--ember);
   outline-offset: 2px;
 }
-
-/* Stat card: incomplete + subtests */
 
 .stat-incomplete {
   font-size: 12.5px;
@@ -499,8 +503,6 @@ input:focus-visible {
   flex: 1;
 }
 
-/* Stopwatch */
-
 .stopwatch {
   display: flex;
   flex-direction: column;
@@ -520,8 +522,6 @@ input:focus-visible {
   display: flex;
   gap: 10px;
 }
-
-/* Profile setup */
 
 .page--narrow {
   max-width: 480px;
@@ -607,8 +607,6 @@ input:focus-visible {
   margin-top: 12px;
 }
 
-/* Locked / coming-soon stat card */
-
 .stat-card--locked {
   opacity: 0.55;
 }
@@ -616,8 +614,6 @@ input:focus-visible {
 .stat-score--locked {
   color: #b0a488;
 }
-
-/* Alternative test buttons (grip: dyno vs hang) */
 
 .subtest-row--alt {
   align-items: flex-start;
@@ -669,8 +665,6 @@ input:focus-visible {
   color: var(--charcoal);
 }
 
-/* Weight unit toggle */
-
 .weight-input-row {
   display: flex;
   gap: 8px;
@@ -712,8 +706,6 @@ input:focus-visible {
   color: #8a7f68;
   margin: -2px 0 14px;
 }
-
-/* Profile page uses ink background, not parchment — override toggle colors there */
 
 .profile-setup .unit-toggle {
   border-color: var(--ink-soft);

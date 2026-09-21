@@ -32,10 +32,10 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
   return (
     <div className="profile-setup">
       <span className="page-eyebrow">Before we begin</span>
-      <h2>What's your bodyweight?</h2>
+      <h2>What&apos;s your bodyweight?</h2>
       <p className="profile-explainer">
         No age, no sex — one fixed scale for everyone. Your bodyweight is only used to convert push-up and pull-up
-        reps into an estimated absolute load, so a heavier, stronger person isn't out-scored by a lighter person
+        reps into an estimated absolute load, so a heavier, stronger person isn&apos;t out-scored by a lighter person
         doing more reps. Nothing is sent anywhere.
       </p>
       <form onSubmit={handleSubmit} className="profile-form">

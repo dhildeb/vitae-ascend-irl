@@ -61,8 +61,7 @@ export default function App() {
         <span className="page-eyebrow">Character Sheet</span>
         <h1>Vitae Ascend</h1>
         <p className="page-subtitle">
-          Bodyweight: {sheet.profile.bodyweightKg}kg · Testing {implementedStats.length} of {STAT_ORDER.length} stats
-          so far
+          Bodyweight: {sheet.profile.bodyweightKg}kg · Testing {implementedStats.length} of {STAT_ORDER.length} stats so far
         </p>
       </header>
 

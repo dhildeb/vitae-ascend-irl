@@ -38,25 +38,25 @@ export default function Stopwatch({ onCapture }: StopwatchProps) {
   const seconds = elapsedMs / 1000
 
   return (
-    <div className="stopwatch">
-      <div className="stopwatch-display">{seconds.toFixed(1)}s</div>
-      <div className="stopwatch-controls">
+    <div className="flex flex-col items-center gap-4 pt-2">
+      <div className="font-mono text-[44px] font-bold text-[#26221c]">{seconds.toFixed(1)}s</div>
+      <div className="flex gap-2.5">
         {!running && elapsedMs === 0 && (
-          <button type="button" className="btn btn-primary" onClick={start}>
+          <button type="button" className="rounded-[3px] bg-[#a33b2e] px-[18px] py-[11px] text-sm font-semibold text-[#efe7d8] transition-colors hover:bg-[#832d22]" onClick={start}>
             Start
           </button>
         )}
         {running && (
-          <button type="button" className="btn btn-primary" onClick={stop}>
+          <button type="button" className="rounded-[3px] bg-[#a33b2e] px-[18px] py-[11px] text-sm font-semibold text-[#efe7d8] transition-colors hover:bg-[#832d22]" onClick={stop}>
             Stop
           </button>
         )}
         {!running && elapsedMs > 0 && (
           <>
-            <button type="button" className="btn btn-outline" onClick={reset}>
+            <button type="button" className="rounded-[3px] border border-[#26221c] bg-transparent px-[18px] py-[11px] text-sm font-semibold text-[#26221c]" onClick={reset}>
               Reset
             </button>
-            <button type="button" className="btn btn-primary" onClick={() => onCapture(seconds)}>
+            <button type="button" className="rounded-[3px] bg-[#a33b2e] px-[18px] py-[11px] text-sm font-semibold text-[#efe7d8] transition-colors hover:bg-[#832d22]" onClick={() => onCapture(seconds)}>
               Use {seconds.toFixed(1)}s
             </button>
           </>
