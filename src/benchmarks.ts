@@ -400,6 +400,66 @@ const coldToleranceAnchors: AnchorPoint[] = [
   { raw: 180, score: 20 },
 ]
 
+// ---------- INTELLIGENCE ----------
+// All four are procedurally generated in-app so there's nothing to memorize on retest.
+
+// Original puzzle format (not reproduced Raven's items, to sidestep both copyright and
+// memorization). Self-consistent internal difficulty calibration, not population-normed —
+// flagged 'thin' accordingly. Raw = correct count out of 8, difficulty escalating.
+const matrixAnchors: AnchorPoint[] = [
+  { raw: 0, score: 3 },
+  { raw: 1, score: 6 },
+  { raw: 2, score: 8 },
+  { raw: 3, score: 9 },
+  { raw: 4, score: 10 },
+  { raw: 5, score: 12 },
+  { raw: 6, score: 14 },
+  { raw: 7, score: 17 },
+  { raw: 8, score: 20 },
+]
+
+// 2-back accuracy %. Healthy-adult means across several published studies cluster 80-88%;
+// ceiling effects are real (SD is narrow near the top), hence the compressed high end.
+const nBackAnchors: AnchorPoint[] = [
+  { raw: 40, score: 3 },
+  { raw: 50, score: 5 },
+  { raw: 65, score: 8 },
+  { raw: 80, score: 10 },
+  { raw: 85, score: 12 },
+  { raw: 89, score: 14 },
+  { raw: 92, score: 16 },
+  { raw: 94, score: 18 },
+  { raw: 97, score: 20 },
+]
+
+// Symbol Digit Modalities Test, standard 90s protocol. Mean 57.72 (SD 9.08) for healthy
+// 26-year-olds; published clinical-impairment cutoff at 33; max possible score is 110.
+const symbolDigitAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 25, score: 5 },
+  { raw: 42, score: 8 },
+  { raw: 58, score: 10 },
+  { raw: 68, score: 12 },
+  { raw: 76, score: 14 },
+  { raw: 85, score: 16 },
+  { raw: 95, score: 18 },
+  { raw: 105, score: 20 },
+]
+
+// Estimated from general Stroop-interference throughput literature, not a single pulled
+// study this session — flagged 'moderate' rather than 'strong'. Raw = correct in 45s.
+const stroopAnchors: AnchorPoint[] = [
+  { raw: 8, score: 3 },
+  { raw: 14, score: 5 },
+  { raw: 20, score: 8 },
+  { raw: 27, score: 10 },
+  { raw: 32, score: 12 },
+  { raw: 37, score: 14 },
+  { raw: 42, score: 16 },
+  { raw: 47, score: 18 },
+  { raw: 55, score: 20 },
+]
+
 export const TEST_DEFS: Record<TestId, TestDef> = {
   pushups: {
     id: 'pushups',
@@ -711,6 +771,46 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     optional: true,
     anchors: coldToleranceAnchors,
   },
+  matrix_reasoning: {
+    id: 'matrix_reasoning',
+    label: 'Matrix Reasoning',
+    unit: 'correct/8',
+    inputType: 'matrix_count',
+    hint: '8 pattern puzzles, increasing difficulty, self-paced. An original format inspired by (not copied from) Raven\u2019s Progressive Matrices — no fixed answer key, so nothing to memorize.',
+    dataQuality: 'thin',
+    source: 'Original puzzle generator — self-consistent difficulty calibration, not population-normed',
+    anchors: matrixAnchors,
+  },
+  n_back: {
+    id: 'n_back',
+    label: '2-Back Working Memory',
+    unit: '% accuracy',
+    inputType: 'nback_pct',
+    hint: 'A letter appears every 2 seconds. Click Match whenever the current letter is the same as the one shown 2 letters ago.',
+    dataQuality: 'strong',
+    source: 'Aggregated healthy-adult 2-back accuracy norms across multiple published studies',
+    anchors: nBackAnchors,
+  },
+  symbol_digit: {
+    id: 'symbol_digit',
+    label: 'Symbol-Digit Substitution',
+    unit: 'correct/90s',
+    inputType: 'symbol_digit_count',
+    hint: 'Match symbols to digits using the key shown, as fast as possible, for 90 seconds. The key is randomly reshuffled every attempt.',
+    dataQuality: 'strong',
+    source: 'Symbol Digit Modalities Test (SDMT) clinical norms — standard 90s protocol',
+    anchors: symbolDigitAnchors,
+  },
+  stroop: {
+    id: 'stroop',
+    label: 'Stroop Test',
+    unit: 'correct/45s',
+    inputType: 'stroop_count',
+    hint: 'Click the button matching the ink color of the word, not the word itself, as fast as possible for 45 seconds.',
+    dataQuality: 'moderate',
+    source: 'Estimated from general Stroop-interference throughput literature',
+    anchors: stroopAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -734,6 +834,9 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
       ['resting_hr', 'resting_hr_device'],
     ],
     bonus: ['farmers_carry', 'illness_frequency', 'cold_tolerance'],
+  },
+  INT: {
+    core: ['matrix_reasoning', 'n_back', 'symbol_digit', 'stroop'],
   },
 }
 

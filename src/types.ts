@@ -1,4 +1,4 @@
-export type StatKey = 'STR' | 'DEX' | 'CON'
+export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT'
 
 export interface Profile {
   bodyweightKg: number
@@ -32,6 +32,10 @@ export type TestId =
   | 'farmers_carry'
   | 'illness_frequency'
   | 'cold_tolerance'
+  | 'matrix_reasoning'
+  | 'n_back'
+  | 'symbol_digit'
+  | 'stroop'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -43,6 +47,10 @@ export type InputType =
   | 'tap_count' // in-app finger-tap mini-game
   | 'count' // plain manual rep/count entry, no bodyweight formula (e.g. line hops)
   | 'hr_recovery' // two-field form: peak bpm + 60s-later bpm; commits the drop
+  | 'matrix_count' // in-app procedurally generated pattern-matrix puzzles
+  | 'nback_pct' // in-app 2-back working memory task, commits accuracy %
+  | 'symbol_digit_count' // in-app 90s symbol-to-digit substitution
+  | 'stroop_count' // in-app 45s Stroop color-naming task
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -99,9 +107,10 @@ export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; impl
   STR: { label: 'Strength', tagline: 'Absolute force & power', implemented: true },
   DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
   CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: true },
+  INT: { label: 'Intelligence', tagline: 'Reasoning, memory & processing speed', implemented: true },
 }
 
-export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON']
+export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT']
 
 export const emptyTestsState = (): TestsState => ({
   pushups: { history: [] },
@@ -131,6 +140,10 @@ export const emptyTestsState = (): TestsState => ({
   farmers_carry: { history: [] },
   illness_frequency: { history: [] },
   cold_tolerance: { history: [] },
+  matrix_reasoning: { history: [] },
+  n_back: { history: [] },
+  symbol_digit: { history: [] },
+  stroop: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

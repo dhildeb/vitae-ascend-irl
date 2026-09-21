@@ -6,6 +6,10 @@ import { toKg, fromKg, loadUnitPref, saveUnitPref } from '../units'
 import Stopwatch from './Stopwatch'
 import ReactionTest from './ReactionTest'
 import FingerTapTest from './FingerTapTest'
+import MatrixReasoningTest from './MatrixReasoningTest'
+import NBackTest from './NBackTest'
+import SymbolDigitTest from './SymbolDigitTest'
+import StroopTest from './StroopTest'
 
 interface TestModalProps {
   def: TestDef
@@ -27,6 +31,10 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isReactionGame = def.inputType === 'duration_ms'
   const isTapGame = def.inputType === 'tap_count'
   const isHrRecovery = def.inputType === 'hr_recovery'
+  const isMatrixGame = def.inputType === 'matrix_count'
+  const isNBackGame = def.inputType === 'nback_pct'
+  const isSymbolDigitGame = def.inputType === 'symbol_digit_count'
+  const isStroopGame = def.inputType === 'stroop_count'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -203,6 +211,10 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isDuration && <Stopwatch onCapture={commit} />}
         {isReactionGame && <ReactionTest onComplete={commit} />}
         {isTapGame && <FingerTapTest onComplete={commit} />}
+        {isMatrixGame && <MatrixReasoningTest onComplete={commit} />}
+        {isNBackGame && <NBackTest onComplete={commit} />}
+        {isSymbolDigitGame && <SymbolDigitTest onComplete={commit} />}
+        {isStroopGame && <StroopTest onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>
