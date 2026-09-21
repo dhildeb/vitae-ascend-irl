@@ -424,7 +424,6 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: auto;
   border-top: 1px solid var(--parchment-line);
   padding-top: 16px;
 }

@@ -243,6 +243,163 @@ const lineHopsAnchors: AnchorPoint[] = [
   { raw: 110, score: 20 },
 ]
 
+// ---------- CONSTITUTION ----------
+// Layer 1: Performance Endurance
+
+const run15Anchors: AnchorPoint[] = [
+  { raw: 540, score: 20 },
+  { raw: 585, score: 18 },
+  { raw: 645, score: 16 },
+  { raw: 690, score: 14 },
+  { raw: 705, score: 12 },
+  { raw: 718, score: 10 },
+  { raw: 780, score: 8 },
+  { raw: 900, score: 5 },
+  { raw: 1080, score: 3 },
+]
+
+const stepTestAnchors: AnchorPoint[] = [
+  { raw: 55, score: 20 },
+  { raw: 62, score: 18 },
+  { raw: 70, score: 16 },
+  { raw: 78, score: 14 },
+  { raw: 85, score: 12 },
+  { raw: 92, score: 10 },
+  { raw: 102, score: 8 },
+  { raw: 115, score: 5 },
+  { raw: 135, score: 3 },
+]
+
+const beepTestAnchors: AnchorPoint[] = [
+  { raw: 4.0, score: 3 },
+  { raw: 5.5, score: 5 },
+  { raw: 7.0, score: 8 },
+  { raw: 8.0, score: 10 },
+  { raw: 9.0, score: 12 },
+  { raw: 10.5, score: 14 },
+  { raw: 12.0, score: 16 },
+  { raw: 13.5, score: 18 },
+  { raw: 15.5, score: 20 },
+]
+
+// Podstawski et al. 2019, n=5971 men aged 18-25: mean 56.69 reps/3min,
+// "average" band 47-66, "very good" band 76-85, best recorded 82
+const burpeesAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 25, score: 5 },
+  { raw: 38, score: 8 },
+  { raw: 57, score: 10 },
+  { raw: 66, score: 12 },
+  { raw: 72, score: 14 },
+  { raw: 76, score: 16 },
+  { raw: 80, score: 18 },
+  { raw: 85, score: 20 },
+]
+
+// Strand et al. 2014, J Exercise Science, male median 110s, quartiles 84-135s
+const plankAnchors: AnchorPoint[] = [
+  { raw: 20, score: 3 },
+  { raw: 40, score: 5 },
+  { raw: 70, score: 8 },
+  { raw: 110, score: 10 },
+  { raw: 125, score: 12 },
+  { raw: 145, score: 14 },
+  { raw: 175, score: 16 },
+  { raw: 210, score: 18 },
+  { raw: 260, score: 20 },
+]
+
+// Converging fitness-testing sources: 20-34 average, 35-49 fit, 50+ exceptional
+const squats60Anchors: AnchorPoint[] = [
+  { raw: 8, score: 3 },
+  { raw: 14, score: 5 },
+  { raw: 20, score: 8 },
+  { raw: 27, score: 10 },
+  { raw: 33, score: 12 },
+  { raw: 40, score: 14 },
+  { raw: 47, score: 16 },
+  { raw: 55, score: 18 },
+  { raw: 65, score: 20 },
+]
+
+// Layer 2: Physiological Resilience
+
+// Calibrated against Cole et al. 1999 NEJM: <=12bpm drop = clinically abnormal (~2x mortality risk)
+const hrRecoveryAnchors: AnchorPoint[] = [
+  { raw: 5, score: 3 },
+  { raw: 9, score: 5 },
+  { raw: 13, score: 8 },
+  { raw: 19, score: 10 },
+  { raw: 24, score: 12 },
+  { raw: 29, score: 14 },
+  { raw: 35, score: 16 },
+  { raw: 42, score: 18 },
+  { raw: 50, score: 20 },
+]
+
+// Normal range 60-100bpm; well-trained endurance athletes commonly 40-60bpm
+const restingHrAnchors: AnchorPoint[] = [
+  { raw: 95, score: 3 },
+  { raw: 88, score: 5 },
+  { raw: 78, score: 8 },
+  { raw: 70, score: 10 },
+  { raw: 63, score: 12 },
+  { raw: 57, score: 14 },
+  { raw: 52, score: 16 },
+  { raw: 47, score: 18 },
+  { raw: 42, score: 20 },
+]
+
+// Untrained average 30-90s (historical RAF passing standard: 45s); 90s+ = trained CO2 tolerance
+const breathHoldAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 25, score: 5 },
+  { raw: 40, score: 8 },
+  { raw: 55, score: 10 },
+  { raw: 70, score: 12 },
+  { raw: 90, score: 14 },
+  { raw: 115, score: 16 },
+  { raw: 135, score: 18 },
+  { raw: 160, score: 20 },
+]
+
+const farmersCarryAnchors: AnchorPoint[] = [
+  { raw: 10, score: 3 },
+  { raw: 20, score: 5 },
+  { raw: 35, score: 8 },
+  { raw: 50, score: 10 },
+  { raw: 65, score: 12 },
+  { raw: 85, score: 14 },
+  { raw: 110, score: 16 },
+  { raw: 140, score: 18 },
+  { raw: 180, score: 20 },
+]
+
+// Lower is better: fewer sick days = higher score
+const illnessFrequencyAnchors: AnchorPoint[] = [
+  { raw: 0, score: 20 },
+  { raw: 2, score: 18 },
+  { raw: 4, score: 16 },
+  { raw: 6, score: 14 },
+  { raw: 8, score: 12 },
+  { raw: 10, score: 10 },
+  { raw: 15, score: 8 },
+  { raw: 22, score: 5 },
+  { raw: 35, score: 3 },
+]
+
+const coldToleranceAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 30, score: 5 },
+  { raw: 50, score: 8 },
+  { raw: 75, score: 10 },
+  { raw: 95, score: 12 },
+  { raw: 115, score: 14 },
+  { raw: 135, score: 16 },
+  { raw: 155, score: 18 },
+  { raw: 180, score: 20 },
+]
+
 export const TEST_DEFS: Record<TestId, TestDef> = {
   pushups: {
     id: 'pushups',
@@ -402,6 +559,158 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     optional: true,
     anchors: lineHopsAnchors,
   },
+  run15: {
+    id: 'run15',
+    label: '1.5-Mile Run',
+    shortLabel: 'Mile Run',
+    altGroupLabel: 'Aerobic Endurance',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'All-out effort over 1.5 miles (2.4km). Enter your total time in seconds (e.g. 12:30 = 750).',
+    dataQuality: 'strong',
+    source: 'Cooper Institute-derived standards',
+    optional: true,
+    anchors: run15Anchors,
+  },
+  step_test: {
+    id: 'step_test',
+    label: '3-Minute Step Test',
+    shortLabel: 'Step Test',
+    altGroupLabel: 'Aerobic Endurance',
+    unit: 'bpm',
+    inputType: 'count',
+    hint: 'Step up/down on a 12-inch step for 3 minutes at a steady cadence, then count your heart rate for the first 60 seconds after stopping. Enter that recovery heart rate. Low-space alternative to the mile run.',
+    dataQuality: 'thin',
+    source: 'Estimated from YMCA/Queens College step test protocols',
+    optional: true,
+    anchors: stepTestAnchors,
+  },
+  beep_test: {
+    id: 'beep_test',
+    label: 'Beep Test (20m Shuttle)',
+    shortLabel: 'Beep Test',
+    altGroupLabel: 'Anaerobic Endurance',
+    unit: 'level',
+    inputType: 'count',
+    inputStep: 0.5,
+    hint: 'Progressive 20m shuttle run to an audio pacer (widely available free online/app). Enter the highest level.shuttle you completed, e.g. 8.5.',
+    dataQuality: 'thin',
+    source: 'Estimated general-population benchmark — published norms are athlete-focused',
+    optional: true,
+    anchors: beepTestAnchors,
+  },
+  burpees: {
+    id: 'burpees',
+    label: 'Max Burpees (3 min)',
+    shortLabel: 'Burpees',
+    altGroupLabel: 'Anaerobic Endurance',
+    unit: 'reps',
+    inputType: 'count',
+    hint: 'Strict burpees (chest to floor, full jump at the top) for 3 minutes straight. Count total reps.',
+    dataQuality: 'strong',
+    source: 'Podstawski et al. 2019, International Journal of Environmental Research and Public Health (n=5,971 men, 18-25)',
+    optional: true,
+    anchors: burpeesAnchors,
+  },
+  plank: {
+    id: 'plank',
+    label: 'Plank Hold',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Strict forearm plank, neutral spine, until form breaks down (not just until it gets hard).',
+    dataQuality: 'strong',
+    source: 'Strand et al. 2014, International Journal of Exercise Science (n=471)',
+    anchors: plankAnchors,
+  },
+  squats60: {
+    id: 'squats60',
+    label: 'Max Bodyweight Squats (60s)',
+    unit: 'reps',
+    inputType: 'count',
+    hint: 'Full-depth bodyweight squats (thighs at least parallel), as many as possible in 60 seconds with controlled form.',
+    dataQuality: 'moderate',
+    source: 'Converging fitness-testing benchmarks',
+    anchors: squats60Anchors,
+  },
+  hr_recovery: {
+    id: 'hr_recovery',
+    label: 'Heart Rate Recovery',
+    unit: 'bpm drop',
+    inputType: 'hr_recovery',
+    hint: "Right after any hard cardio effort (the mile run or step test work well), take your pulse immediately, then again 60 seconds later. The drop between the two is what's scored. This is a wellness indicator, not a diagnostic tool — talk to a doctor if you have concerns about your heart health.",
+    dataQuality: 'strong',
+    source: 'Cole et al. 1999, New England Journal of Medicine',
+    anchors: hrRecoveryAnchors,
+  },
+  resting_hr: {
+    id: 'resting_hr',
+    label: 'Resting Heart Rate (manual)',
+    shortLabel: 'Manual Pulse',
+    altGroupLabel: 'Resting Heart Rate',
+    unit: 'bpm',
+    inputType: 'count',
+    hint: 'Sit quietly for 5 minutes, then count your pulse for 60 seconds (wrist or neck).',
+    dataQuality: 'moderate',
+    source: 'General clinical resting heart rate norms',
+    optional: true,
+    anchors: restingHrAnchors,
+  },
+  resting_hr_device: {
+    id: 'resting_hr_device',
+    label: 'Resting Heart Rate (device)',
+    shortLabel: 'Device Reading',
+    altGroupLabel: 'Resting Heart Rate',
+    unit: 'bpm',
+    inputType: 'count',
+    hint: 'Your resting heart rate as reported by a smartwatch or chest strap — more accurate than a manual count.',
+    dataQuality: 'strong',
+    source: 'General clinical resting heart rate norms',
+    optional: true,
+    anchors: restingHrAnchors,
+  },
+  breath_hold: {
+    id: 'breath_hold',
+    label: 'Breath Hold',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'One normal breath in (do not hyperventilate first), then hold as long as comfortably possible, seated or lying down. Stop immediately if you feel dizzy or lightheaded. This should not approach freediver territory (3-5 min) — that requires specialized training and supervision.',
+    dataQuality: 'moderate',
+    source: 'Historical RAF fitness-test standard; general breath-hold benchmarks',
+    anchors: breathHoldAnchors,
+  },
+  farmers_carry: {
+    id: 'farmers_carry',
+    label: "Farmer's Carry",
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Carry a heavy pair of weights (dumbbells, kettlebells, whatever you have) at your sides for as long as you can maintain posture.',
+    dataQuality: 'thin',
+    source: 'Estimated benchmark — least standardized test in the battery',
+    optional: true,
+    anchors: farmersCarryAnchors,
+  },
+  illness_frequency: {
+    id: 'illness_frequency',
+    label: 'Illness Frequency',
+    unit: 'sick days/year',
+    inputType: 'count',
+    hint: 'Roughly how many days in the past 12 months were you noticeably sick (cold, flu, etc.)? Self-reported and memory-dependent — the weakest-quality data point in this whole system, included for concept-fit rather than precision.',
+    dataQuality: 'thin',
+    source: 'Self-report — not a measured test',
+    optional: true,
+    anchors: illnessFrequencyAnchors,
+  },
+  cold_tolerance: {
+    id: 'cold_tolerance',
+    label: 'Cold Tolerance',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Hand in ice water, as long as tolerable. Hard stop at 3 minutes regardless — scores cap there too, so there is no benefit to pushing further. Skip this test entirely if you have any cardiovascular condition, Raynaud\u2019s, or are pregnant.',
+    dataQuality: 'thin',
+    source: 'Cold pressor test literature — general pain-tolerance research paradigm',
+    optional: true,
+    anchors: coldToleranceAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -416,6 +725,15 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
   DEX: {
     core: ['reaction', 'finger_tap', 'balance', 'sprint20'],
     alternatives: [['shuttle_5105', 'line_hops']],
+  },
+  CON: {
+    core: ['plank', 'squats60', 'breath_hold', 'hr_recovery'],
+    alternatives: [
+      ['run15', 'step_test'],
+      ['beep_test', 'burpees'],
+      ['resting_hr', 'resting_hr_device'],
+    ],
+    bonus: ['farmers_carry', 'illness_frequency', 'cold_tolerance'],
   },
 }
 

@@ -16,6 +16,7 @@ interface TestModalProps {
 
 export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: TestModalProps) {
   const [inputValue, setInputValue] = useState('')
+  const [recoveryValue, setRecoveryValue] = useState('')
   const [unit, setUnit] = useState<WeightUnit>(loadUnitPref)
 
   const isRepBased = def.inputType === 'reps_bw_push' || def.inputType === 'reps_bw_pull'
@@ -25,6 +26,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isCount = def.inputType === 'count'
   const isReactionGame = def.inputType === 'duration_ms'
   const isTapGame = def.inputType === 'tap_count'
+  const isHrRecovery = def.inputType === 'hr_recovery'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -50,6 +52,22 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
     commit(raw)
   }
 
+  const handleHrRecoverySubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const peak = Number(inputValue)
+    const recovery = Number(recoveryValue)
+    if (Number.isNaN(peak) || Number.isNaN(recovery) || peak <= 0 || recovery <= 0) return
+    commit(Math.max(0, peak - recovery))
+  }
+
+  const hrDropPreview = () => {
+    if (!isHrRecovery || inputValue === '' || recoveryValue === '') return null
+    const peak = Number(inputValue)
+    const recovery = Number(recoveryValue)
+    if (Number.isNaN(peak) || Number.isNaN(recovery)) return null
+    return peak - recovery
+  }
+
   const repsPreview = () => {
     if (!isRepBased || inputValue === '') return null
     const reps = Number(inputValue)
@@ -66,6 +84,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
 
   const preview = repsPreview()
   const loadPreview = loadPreviewKg()
+  const hrDrop = hrDropPreview()
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -99,7 +118,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
                 id="raw-value"
                 type="number"
                 min={0}
-                step={isLoad ? 0.5 : 1}
+                step={isLoad ? 0.5 : def.inputStep ?? 1}
                 inputMode="decimal"
                 autoFocus
                 value={inputValue}
@@ -136,6 +155,46 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
               </p>
             )}
             <button type="submit" className="btn btn-primary" disabled={inputValue === ''}>
+              Save Score
+            </button>
+          </form>
+        )}
+
+        {isHrRecovery && (
+          <form className="modal-form" onSubmit={handleHrRecoverySubmit}>
+            <label htmlFor="hr-peak">
+              Peak pulse, right after stopping <span className="modal-unit">(bpm)</span>
+            </label>
+            <input
+              id="hr-peak"
+              type="number"
+              min={0}
+              step={1}
+              inputMode="numeric"
+              autoFocus
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="e.g. 150"
+            />
+            <label htmlFor="hr-recovery">
+              Pulse 60 seconds later <span className="modal-unit">(bpm)</span>
+            </label>
+            <input
+              id="hr-recovery"
+              type="number"
+              min={0}
+              step={1}
+              inputMode="numeric"
+              value={recoveryValue}
+              onChange={(e) => setRecoveryValue(e.target.value)}
+              placeholder="e.g. 122"
+            />
+            {hrDrop !== null && (
+              <p className="modal-derived">
+                = <strong>{hrDrop} bpm</strong> drop
+              </p>
+            )}
+            <button type="submit" className="btn btn-primary" disabled={inputValue === '' || recoveryValue === ''}>
               Save Score
             </button>
           </form>

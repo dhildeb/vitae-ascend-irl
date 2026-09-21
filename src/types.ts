@@ -19,6 +19,19 @@ export type TestId =
   | 'sprint20'
   | 'shuttle_5105'
   | 'line_hops'
+  | 'run15'
+  | 'step_test'
+  | 'beep_test'
+  | 'burpees'
+  | 'plank'
+  | 'squats60'
+  | 'hr_recovery'
+  | 'resting_hr'
+  | 'resting_hr_device'
+  | 'breath_hold'
+  | 'farmers_carry'
+  | 'illness_frequency'
+  | 'cold_tolerance'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -29,6 +42,7 @@ export type InputType =
   | 'duration_ms' // in-app reaction-time mini-game
   | 'tap_count' // in-app finger-tap mini-game
   | 'count' // plain manual rep/count entry, no bodyweight formula (e.g. line hops)
+  | 'hr_recovery' // two-field form: peak bpm + 60s-later bpm; commits the drop
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -66,6 +80,8 @@ export interface TestDef {
   dataQuality: 'strong' | 'moderate' | 'thin'
   source: string
   optional?: boolean
+  /** Overrides the number input's step attribute for 'count' tests (default 1). E.g. 0.5 for beep-test level.shuttle. */
+  inputStep?: number
   /** Fixed, non-demographic anchors: raw value -> score, 3 to 20. */
   anchors: AnchorPoint[]
 }
@@ -82,7 +98,7 @@ export interface StatTestGroup {
 export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; implemented: boolean }> = {
   STR: { label: 'Strength', tagline: 'Absolute force & power', implemented: true },
   DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
-  CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: false },
+  CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: true },
 }
 
 export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON']
@@ -102,6 +118,19 @@ export const emptyTestsState = (): TestsState => ({
   sprint20: { history: [] },
   shuttle_5105: { history: [] },
   line_hops: { history: [] },
+  run15: { history: [] },
+  step_test: { history: [] },
+  beep_test: { history: [] },
+  burpees: { history: [] },
+  plank: { history: [] },
+  squats60: { history: [] },
+  hr_recovery: { history: [] },
+  resting_hr: { history: [] },
+  resting_hr_device: { history: [] },
+  breath_hold: { history: [] },
+  farmers_carry: { history: [] },
+  illness_frequency: { history: [] },
+  cold_tolerance: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({
