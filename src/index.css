@@ -222,6 +222,8 @@ body {
   color: var(--charcoal);
   width: 100%;
   max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
   border-radius: 3px;
   padding: 28px;
   border-top: 4px solid var(--ember);
@@ -622,6 +624,210 @@ body {
   font-family: var(--font-mono);
   font-size: 13px;
   color: #6b6153;
+}
+
+/* Perception (visual search) */
+
+.perception-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.perception-grid {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.perception-cell {
+  aspect-ratio: 1;
+  background: #fbf8f1;
+  border: 1px solid var(--parchment-line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.perception-cell:hover {
+  background: #f0e9d8;
+}
+
+/* Insight (social scenarios) */
+
+.insight-test {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.insight-text {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--charcoal);
+  background: #fbf8f1;
+  border: 1px solid var(--parchment-line);
+  border-radius: 3px;
+  padding: 14px;
+  margin: 0;
+}
+
+.insight-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.insight-option {
+  text-align: left;
+  padding: 10px 14px;
+  border: 1.5px solid var(--parchment-line);
+  background: #fbf8f1;
+  border-radius: 3px;
+  font-size: 13.5px;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.insight-option--correct {
+  border-color: var(--go-green);
+  border-width: 2px;
+}
+
+/* Judgment (Iowa Gambling Task) */
+
+.igt-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.igt-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #6b6153;
+}
+
+.igt-total {
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.igt-decks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.igt-deck {
+  padding: 22px 0;
+  border: 1.5px solid var(--charcoal);
+  background: #fbf8f1;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.igt-deck:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.igt-outcome {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--ember);
+  margin: 0;
+}
+
+/* Go/No-Go */
+
+.gonogo-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.gonogo-hint {
+  font-size: 13px;
+  color: #8a7f68;
+  margin: 0;
+  text-align: center;
+}
+
+.gonogo-letter {
+  font-family: var(--font-mono);
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--charcoal);
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.gonogo-letter--stop {
+  color: var(--ember);
+}
+
+.gonogo-go-btn {
+  min-width: 140px;
+}
+
+/* Scene recall */
+
+.scene-recall-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.scene-recall-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scene-recall-item {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.scene-recall-emoji-options {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.scene-recall-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 6px;
+  border: 1px solid var(--parchment-line);
 }
 
 button:focus-visible,

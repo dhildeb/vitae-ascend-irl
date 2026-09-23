@@ -1,7 +1,9 @@
-# Vitae Ascend — MVP (Strength v3: absolute strength model)
+# Vitae Ascend — IRL Character Sheet
 
-A character-sheet app for physical stats. Strength is now the fully worked
-example of the design philosophy the rest of the stats will follow.
+A front-end-only app that turns you into a D&D-style character sheet. Your
+stats — **STR, DEX, CON, INT, WIS** — aren't self-reported or XP-for-checking-
+boxes; each one is derived from real tests (timed, counted, or measured
+in-browser) mapped onto a fixed 3–20 scale, same feel as a 5e ability score.
 
 ## Run it
 
@@ -10,104 +12,84 @@ npm install
 npm run dev
 ```
 
-## The core idea
+## Core idea
 
-**One fixed scale, no age or sex adjustment.** Score 10 = a genuinely
-average untrained adult. Score 20 = elite / near the practical ceiling of
-drug-free human performance. Once every sub-test reads 20, Strength is
-maxed — further specialization should go into Dexterity or another stat.
+**A stat has to mean something because it came from a real measurement.**
+That's the one rule everything else here serves. See [CLAUDE.md](CLAUDE.md)
+for the full design philosophy — scoring rules, anti-gaming constraints, and
+the standard this project holds every test to before it's allowed to exist.
 
-**Push-ups and pull-ups are converted into an estimated absolute load
-(kg), not scored on reps directly.** This is the fix for the "a small
-person shouldn't out-score a bigger, stronger person just by doing more
-reps" problem:
+**One fixed scale, no age or sex adjustment.** Score 10 = a genuinely average
+untrained adult. Score 20 = elite / near the practical ceiling of drug-free
+human performance, for physical stats, or nearing test ceiling, for
+cognitive ones.
 
-- A push-up loads ~69–75% of bodyweight through the rep (force-plate data,
-  Suprak et al. 2011) — we use 70%.
-- A pull-up loads ~100% of bodyweight (you lift your whole mass).
-- The Epley formula (`1RM = load × (1 + reps/30)`), standard in strength
-  training, extrapolates a rep count into an estimated one-rep max.
+## The stats and their tests
 
-```
-Estimated push strength (kg) = bodyweight × 0.70 × (1 + reps/30)
-Estimated pull strength (kg) = bodyweight × (1 + reps/30)
-```
-
-A heavier, genuinely stronger person can now out-score a lighter person
-doing more reps — verified in testing: a 110kg person doing 25 push-ups
-(score 16) outscores a 75kg person doing 40 push-ups (score 14).
-
-Broad jump, grip, bench, and deadlift are scored on their own raw units
-directly — those tests don't have the "reps let you game the scale"
-problem, so no conversion is applied there.
-
-## The Strength battery
-
-| Test | Required? | Input |
+| Stat | Domain | Core tests |
 |---|---|---|
-| Push-Ups | Core | reps (converted via formula above) |
-| Pull-Ups | Core | reps (converted via formula above) |
-| Standing Broad Jump | Core | distance in cm |
-| Grip Strength | Core (pick one) | dynamometer kg **or** dead-hang seconds (in-app stopwatch) |
-| Bench Press 1RM | Optional | kg — refines the score if you have a barbell |
-| Deadlift 1RM | Optional | kg — refines the score if you have a barbell |
+| **STR** | Absolute strength | Push-ups, Pull-ups *(reps converted to estimated kg — see below)*, Grip (dynamometer or dead-hang), Broad Jump / Vertical Jump; Bench/Deadlift 1RM as optional refinement |
+| **DEX** | Speed, reflex, coordination | Reaction Time, Finger Tap, Balance, 20m Sprint; Shuttle Run / Line Hops as alternatives |
+| **CON** | Endurance, stamina, resilience | Plank Hold, 60s Squats, Breath Hold, Heart-Rate Recovery; Run/Step test, Beep test/Burpees, Resting HR as alternatives; Farmer's Carry, illness frequency, cold tolerance as bonus |
+| **INT** | Reasoning, memory, processing speed | Matrix Reasoning (procedural puzzles), N-Back (working memory), Symbol-Digit Substitution, Stroop |
+| **WIS** | Judgment, perception, self-control | Visual Search, Reading the Room (D&D-scenario insight/deception judgment), Iowa Gambling Task (randomized per attempt), Self-Control / delay-discounting |
 
-The composite Strength score is the average of every logged test's score
-(min the 3 core tests + one grip method; bench/deadlift blend in if you
-have them). Each sub-test independently caps at score 20 — since the
-composite is an average, it structurally can't exceed 20 either. That's
-the "max" you asked for, and it falls out of the design rather than being
-a special case.
+Push-ups and pull-ups are converted into an **estimated absolute load (kg)**,
+not scored on reps directly — a push-up loads ~70% of bodyweight, a pull-up
+~100%, and the Epley formula (`1RM = load × (1 + reps/30)`) extrapolates rep
+count into estimated one-rep max. This is why a heavier, genuinely stronger
+person out-scores a lighter person doing more reps, instead of the reverse.
+
+Several tests (Reaction, Finger Tap, N-Back, Stroop, Matrix Reasoning, the
+Gambling Task, Visual Search) run as in-app mini-games rather than
+self-reported numbers — the app measures them directly. This is the
+preferred pattern going forward: prefer an in-app measured test over a
+self-reported one wherever the domain allows it.
+
+The composite score for a stat is the average of its logged core tests
+(alternatives are interchangeable slots, bonus tests refine but aren't
+required). Each sub-test independently caps at 20, so the composite
+structurally can't exceed it either.
 
 ## Files
 
-- **`src/types.ts`** — data model: `Profile` (just `bodyweightKg` now),
-  `TestDef`, `StatTestGroup` (core / alternatives / bonus tests per stat).
-- **`src/benchmarks.ts`** — all fixed anchor tables (raw value → score,
-  3–20) and the push/pull estimation formulas. This is the file to tune as
-  you playtest — see the big comment block at the top for the full
-  scoring philosophy and sources.
-- **`src/composite.ts`** — combines a stat's core + alternative + bonus
-  test scores into the single displayed number.
-- **`src/components/TestModal.tsx`** — renders the right input per test
-  (number field with live kg preview for push/pull, plain number for
-  distance/load, in-app stopwatch for dead hang).
-- **`src/components/StatCard.tsx`** — shows the composite plus every
-  sub-test's status; DEX and CON currently render as locked "coming soon"
-  cards since they haven't been redesigned with this same rigor yet.
-- Sheet persists to `localStorage` under `vitae-ascend:sheet`.
+- **`src/types.ts`** — data model: `StatKey`, `TestId`, `InputType` per
+  test, `CharacterSheet` (profile + per-test history), persisted to
+  `localStorage` under `vitae-ascend:sheet`.
+- **`src/benchmarks.ts`** — every test's anchor table (raw value → 3–20
+  score), the push/pull estimation formulas, and `STAT_TEST_GROUPS` (which
+  tests are core/alternative/bonus per stat). This is the file to tune as
+  you playtest.
+- **`src/composite.ts`** — combines a stat's core + alternative + bonus test
+  scores into the single displayed number.
+- **`src/components/TestModal.tsx`** — routes to the right input/mini-game
+  per test.
+- **`src/components/StatCard.tsx`** — the stat block UI: composite score,
+  modifier, and per-test status.
+- **`src/components/*Test.tsx`** — one component per in-app mini-game
+  (reaction time, N-Back, Stroop, matrix reasoning, gambling task, visual
+  search, insight scenarios, self-control, etc).
 
-## Sources
+## Known gaps / open playtest questions
+
+- No Training → Retest loop yet — this covers Test → Score only. Raising a
+  stat via structured practice, then re-testing to confirm real movement,
+  is the next major piece.
+- No cooldown on retesting yet (you can currently spam-retest core tests).
+- The WIS Insight scenario bank and Perception Search are the newest/least
+  playtested content — watch for repeat-scenario memorization and whether
+  plausible-but-wrong answers are actually tempting rather than obviously
+  wrong.
+- Anchor tables for anything past core strength lifts are compiled
+  estimates, not clinically normed instruments — expect to retune breakpoints
+  as you playtest against real people.
+
+## Sources (strength anchors)
 
 - Push-up load %: Suprak, Dawes & Stephenson, *J Strength Cond Res* 2011
-  (~69% up position, ~75% down position of bodyweight supported)
 - Epley formula: standard 1RM estimation used throughout strength training
-- Grip strength: Ranganathan et al. global systematic review (2.4M
-  adults, 69 countries); NIH Toolbox U.S. norms
-- Bench/deadlift bodyweight-multiple standards: Strength Level, ExRx.net,
-  and other aggregated community strength-standard datasets
-- Broad jump and dead-hang benchmarks: the thinnest data in the battery —
+- Grip strength: Ranganathan et al. global systematic review; NIH Toolbox
+  U.S. norms
+- Bench/deadlift bodyweight-multiple standards: Strength Level, ExRx.net
+- Broad jump / dead-hang benchmarks: thinnest data in the battery —
   compiled estimates, flagged as such in the UI (`dataQuality: 'thin'`)
-
-## What to playtest first
-
-1. Do the anchor values feel right against your own numbers, and against
-   a few friends of different sizes? This is the most important thing to
-   pressure-test — the whole point of the redesign was fairness across
-   body sizes.
-2. Is requiring all 3 core tests + a grip method before revealing a score
-   too much friction, or does it feel appropriately like "you don't get a
-   verdict until you've actually done the work"?
-3. Does the optional bench/deadlift refinement meaningfully change the
-   score for people who have that equipment, or is it redundant with the
-   bodyweight tests?
-
-## Known gaps
-
-- DEX and CON are placeholder "coming soon" cards — not yet redesigned
-  with the same absolute, multi-test approach.
-- No Training → Retest loop yet.
-- Broad jump doesn't get the same bodyweight-reward treatment as
-  push/pull — it's scored on raw distance, since explosive power is a
-  genuinely different quality (power-to-weight) than max strength, not an
-  oversight. Worth revisiting if that feels wrong once you've tested it.

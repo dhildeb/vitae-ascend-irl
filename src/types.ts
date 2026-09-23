@@ -1,4 +1,4 @@
-export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT'
+export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS'
 
 export interface Profile {
   bodyweightKg: number
@@ -36,6 +36,11 @@ export type TestId =
   | 'n_back'
   | 'symbol_digit'
   | 'stroop'
+  | 'perception_search'
+  | 'insight_scenario'
+  | 'judgment_igt'
+  | 'go_no_go'
+  | 'scene_recall'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -51,6 +56,11 @@ export type InputType =
   | 'nback_pct' // in-app 2-back working memory task, commits accuracy %
   | 'symbol_digit_count' // in-app 90s symbol-to-digit substitution
   | 'stroop_count' // in-app 45s Stroop color-naming task
+  | 'perception_ms' // in-app visual search, commits avg detection time
+  | 'insight_count' // in-app social-scenario judgment, 8 rounds
+  | 'igt_score' // in-app Iowa Gambling Task, commits net advantageous-deck score
+  | 'gonogo_pct' // in-app go/no-go inhibition task, commits composite go+no-go accuracy %
+  | 'recall_count' // in-app brief-exposure scene recall, commits correct-round count
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -108,9 +118,10 @@ export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; impl
   DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
   CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: true },
   INT: { label: 'Intelligence', tagline: 'Reasoning, memory & processing speed', implemented: true },
+  WIS: { label: 'Wisdom', tagline: 'Perception, insight & judgment', implemented: true },
 }
 
-export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT']
+export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT', 'WIS']
 
 export const emptyTestsState = (): TestsState => ({
   pushups: { history: [] },
@@ -144,6 +155,11 @@ export const emptyTestsState = (): TestsState => ({
   n_back: { history: [] },
   symbol_digit: { history: [] },
   stroop: { history: [] },
+  perception_search: { history: [] },
+  insight_scenario: { history: [] },
+  judgment_igt: { history: [] },
+  go_no_go: { history: [] },
+  scene_recall: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

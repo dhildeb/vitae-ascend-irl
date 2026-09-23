@@ -10,6 +10,11 @@ import MatrixReasoningTest from './MatrixReasoningTest'
 import NBackTest from './NBackTest'
 import SymbolDigitTest from './SymbolDigitTest'
 import StroopTest from './StroopTest'
+import PerceptionSearchTest from './PerceptionSearchTest'
+import InsightScenarioTest from './InsightScenarioTest'
+import JudgmentIGTTest from './JudgmentIGTTest'
+import GoNoGoTest from './GoNoGoTest'
+import SceneRecallTest from './SceneRecallTest'
 
 interface TestModalProps {
   def: TestDef
@@ -35,6 +40,11 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isNBackGame = def.inputType === 'nback_pct'
   const isSymbolDigitGame = def.inputType === 'symbol_digit_count'
   const isStroopGame = def.inputType === 'stroop_count'
+  const isPerceptionGame = def.inputType === 'perception_ms'
+  const isInsightGame = def.inputType === 'insight_count'
+  const isJudgmentGame = def.inputType === 'igt_score'
+  const isGoNoGoGame = def.inputType === 'gonogo_pct'
+  const isSceneRecallGame = def.inputType === 'recall_count'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -215,6 +225,11 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isNBackGame && <NBackTest onComplete={commit} />}
         {isSymbolDigitGame && <SymbolDigitTest onComplete={commit} />}
         {isStroopGame && <StroopTest onComplete={commit} />}
+        {isPerceptionGame && <PerceptionSearchTest onComplete={commit} />}
+        {isInsightGame && <InsightScenarioTest onComplete={commit} />}
+        {isJudgmentGame && <JudgmentIGTTest onComplete={commit} />}
+        {isGoNoGoGame && <GoNoGoTest onComplete={commit} />}
+        {isSceneRecallGame && <SceneRecallTest onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>

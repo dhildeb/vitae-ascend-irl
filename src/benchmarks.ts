@@ -460,6 +460,79 @@ const stroopAnchors: AnchorPoint[] = [
   { raw: 55, score: 20 },
 ]
 
+// ---------- WISDOM ----------
+// All five in-app. Data quality is honestly thin across this whole stat — these are
+// original or shortened adaptations of real paradigms, not directly-normed instruments.
+
+// Avg detection time (ms) across 6 visual-search rounds, lower is better. Self-consistent
+// estimate, not population-normed.
+const perceptionAnchors: AnchorPoint[] = [
+  { raw: 3000, score: 3 },
+  { raw: 2400, score: 5 },
+  { raw: 1700, score: 8 },
+  { raw: 1200, score: 10 },
+  { raw: 950, score: 12 },
+  { raw: 750, score: 14 },
+  { raw: 600, score: 16 },
+  { raw: 500, score: 18 },
+  { raw: 420, score: 20 },
+]
+
+// Correct out of 8 social-scenario rounds, higher is better. Same difficulty-ramp shape as
+// matrix reasoning, since it's the same "8 items, original content" format.
+const insightAnchors: AnchorPoint[] = [
+  { raw: 0, score: 3 },
+  { raw: 1, score: 6 },
+  { raw: 2, score: 8 },
+  { raw: 3, score: 9 },
+  { raw: 4, score: 10 },
+  { raw: 5, score: 12 },
+  { raw: 6, score: 14 },
+  { raw: 7, score: 17 },
+  { raw: 8, score: 20 },
+]
+
+// Iowa Gambling Task, adapted to 25 trials (classic clinical version is ~100). Raw =
+// (advantageous deck picks) - (disadvantageous deck picks), range -25 to +25. Shortened
+// protocol isn't directly normed in the literature, so this is an honest estimate.
+const igtAnchors: AnchorPoint[] = [
+  { raw: -18, score: 3 },
+  { raw: -12, score: 5 },
+  { raw: -5, score: 8 },
+  { raw: 2, score: 10 },
+  { raw: 6, score: 12 },
+  { raw: 10, score: 14 },
+  { raw: 13, score: 16 },
+  { raw: 16, score: 18 },
+  { raw: 19, score: 20 },
+]
+
+// Go/No-Go inhibition task. Raw = composite % of (go-trial hit rate + no-go-trial inhibition
+// rate) / 2. Always-respond or never-respond strategies both land near 50%, so this can't be
+// gamed by a static strategy — see CLAUDE.md.
+const goNoGoAnchors: AnchorPoint[] = [
+  { raw: 50, score: 3 },
+  { raw: 58, score: 6 },
+  { raw: 66, score: 9 },
+  { raw: 74, score: 11 },
+  { raw: 80, score: 13 },
+  { raw: 86, score: 15 },
+  { raw: 91, score: 17 },
+  { raw: 96, score: 19 },
+  { raw: 100, score: 20 },
+]
+
+// Brief-exposure scene recall, correct out of 5 rounds. Tests incidental/passive perception
+// (detail you weren't told to look for) rather than active search.
+const sceneRecallAnchors: AnchorPoint[] = [
+  { raw: 0, score: 3 },
+  { raw: 1, score: 7 },
+  { raw: 2, score: 10 },
+  { raw: 3, score: 13 },
+  { raw: 4, score: 17 },
+  { raw: 5, score: 20 },
+]
+
 export const TEST_DEFS: Record<TestId, TestDef> = {
   pushups: {
     id: 'pushups',
@@ -811,6 +884,56 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     source: 'Estimated from general Stroop-interference throughput literature',
     anchors: stroopAnchors,
   },
+  perception_search: {
+    id: 'perception_search',
+    label: 'Visual Search',
+    unit: 'ms avg',
+    inputType: 'perception_ms',
+    hint: 'Find the one different letter hidden in a grid of identical letters, as fast as possible, across 6 rounds of increasing size.',
+    dataQuality: 'thin',
+    source: 'Original visual-search game, self-consistent difficulty calibration',
+    anchors: perceptionAnchors,
+  },
+  insight_scenario: {
+    id: 'insight_scenario',
+    label: 'Reading the Room',
+    unit: 'correct/8',
+    inputType: 'insight_count',
+    hint: '8 short social scenarios. Pick what\u2019s most likely really going on beneath the surface. Original scenarios, randomly selected and reworded each attempt.',
+    dataQuality: 'thin',
+    source: 'Original content — not a validated psychometric instrument',
+    anchors: insightAnchors,
+  },
+  judgment_igt: {
+    id: 'judgment_igt',
+    label: 'Iowa Gambling Task',
+    unit: 'net advantage',
+    inputType: 'igt_score',
+    hint: '25 draws from 4 card decks. Some decks pay well up front but cost you more over time — the task is learning which from the outcomes, not the rules.',
+    dataQuality: 'moderate',
+    source: 'Bechara et al. classic paradigm, adapted to 25 trials (clinical version is ~100) — shortened protocol not directly normed',
+    anchors: igtAnchors,
+  },
+  go_no_go: {
+    id: 'go_no_go',
+    label: 'Go/No-Go',
+    unit: '% composite accuracy',
+    inputType: 'gonogo_pct',
+    hint: 'Respond fast to every letter except one reserved "stop" letter — withhold your response when it appears. Tests real-time impulse inhibition, not a hypothetical choice.',
+    dataQuality: 'moderate',
+    source: 'Go/No-Go inhibition paradigm, standard in clinical impulsivity testing',
+    anchors: goNoGoAnchors,
+  },
+  scene_recall: {
+    id: 'scene_recall',
+    label: 'Scene Recall',
+    unit: 'correct/5',
+    inputType: 'recall_count',
+    hint: 'A set of items flashes briefly. After it disappears, you’ll be asked about a detail you weren’t told to look for. Tests passive/incidental perception, not active search.',
+    dataQuality: 'thin',
+    source: 'Original paradigm adapted from inattentional-blindness / incidental-recall research',
+    anchors: sceneRecallAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -837,6 +960,9 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
   },
   INT: {
     core: ['matrix_reasoning', 'n_back', 'symbol_digit', 'stroop'],
+  },
+  WIS: {
+    core: ['perception_search', 'insight_scenario', 'judgment_igt', 'go_no_go', 'scene_recall'],
   },
 }
 
