@@ -51,7 +51,7 @@ const MAX_EXPOSURE_MS = 800
 
 // A response after this amount of time is still accepted,
 // but becomes increasingly poor from a speed perspective.
-const SPEED_TARGET_MS = 400
+// const SPEED_TARGET_MS = 400
 
 // How many recent trials determine the next difficulty.
 const ADAPTIVE_WINDOW = 10

@@ -507,19 +507,6 @@ const igtAnchors: AnchorPoint[] = [
   { raw: 19, score: 20 },
 ]
 
-// Delay-discounting task, count of "wait for the larger reward" choices out of 10 trials.
-const delayDiscountAnchors: AnchorPoint[] = [
-  { raw: 1, score: 3 },
-  { raw: 2, score: 5 },
-  { raw: 4, score: 8 },
-  { raw: 5, score: 10 },
-  { raw: 6, score: 12 },
-  { raw: 7, score: 14 },
-  { raw: 8, score: 16 },
-  { raw: 9, score: 18 },
-  { raw: 10, score: 20 },
-]
-
 // ---------- Mindfulness / inner discipline (folded into WIS) ----------
 
 // Accuracy % on the Breath-Counting Task (Levinson et al. 2014, replicated). Real validated
