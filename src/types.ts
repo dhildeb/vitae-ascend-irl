@@ -41,6 +41,9 @@ export type TestId =
   | 'judgment_igt'
   | 'go_no_go'
   | 'scene_recall'
+  | 'breath_count'
+  | 'stillness_hold'
+  | 'purpose_in_life'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -61,6 +64,10 @@ export type InputType =
   | 'igt_score' // in-app Iowa Gambling Task, commits net advantageous-deck score
   | 'gonogo_pct' // in-app go/no-go inhibition task, commits composite go+no-go accuracy %
   | 'recall_count' // in-app brief-exposure scene recall, commits correct-round count
+  | 'breath_pct' // in-app breath-counting mindfulness task, commits accuracy %
+  | 'likert_survey' // multi-item 1-7 self-report survey, commits average score
+  | 'breath_count_pct' // in-app Breath-Counting Task, commits accuracy %
+  | 'likert_survey' // in-app multi-item Likert questionnaire, commits average score
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -118,7 +125,7 @@ export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; impl
   DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
   CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: true },
   INT: { label: 'Intelligence', tagline: 'Reasoning, memory & processing speed', implemented: true },
-  WIS: { label: 'Wisdom', tagline: 'Perception, insight & judgment', implemented: true },
+  WIS: { label: 'Wisdom', tagline: 'Perception, insight, judgment & inner discipline', implemented: true },
 }
 
 export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT', 'WIS']
@@ -160,6 +167,9 @@ export const emptyTestsState = (): TestsState => ({
   judgment_igt: { history: [] },
   go_no_go: { history: [] },
   scene_recall: { history: [] },
+  breath_count: { history: [] },
+  stillness_hold: { history: [] },
+  purpose_in_life: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

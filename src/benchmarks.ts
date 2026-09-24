@@ -507,9 +507,63 @@ const igtAnchors: AnchorPoint[] = [
   { raw: 19, score: 20 },
 ]
 
-// Go/No-Go inhibition task. Raw = composite % of (go-trial hit rate + no-go-trial inhibition
-// rate) / 2. Always-respond or never-respond strategies both land near 50%, so this can't be
-// gamed by a static strategy — see CLAUDE.md.
+// Delay-discounting task, count of "wait for the larger reward" choices out of 10 trials.
+const delayDiscountAnchors: AnchorPoint[] = [
+  { raw: 1, score: 3 },
+  { raw: 2, score: 5 },
+  { raw: 4, score: 8 },
+  { raw: 5, score: 10 },
+  { raw: 6, score: 12 },
+  { raw: 7, score: 14 },
+  { raw: 8, score: 16 },
+  { raw: 9, score: 18 },
+  { raw: 10, score: 20 },
+]
+
+// ---------- Mindfulness / inner discipline (folded into WIS) ----------
+
+// Accuracy % on the Breath-Counting Task (Levinson et al. 2014, replicated). Real validated
+// mindfulness paradigm; population accuracy % is estimated rather than a cited study figure.
+const breathCountAnchors: AnchorPoint[] = [
+  { raw: 15, score: 3 },
+  { raw: 25, score: 5 },
+  { raw: 40, score: 8 },
+  { raw: 55, score: 10 },
+  { raw: 65, score: 12 },
+  { raw: 75, score: 14 },
+  { raw: 85, score: 16 },
+  { raw: 92, score: 18 },
+  { raw: 98, score: 20 },
+]
+
+// Seconds motionless, self-stopped on movement. No direct literature — estimated benchmark.
+const stillnessAnchors: AnchorPoint[] = [
+  { raw: 20, score: 3 },
+  { raw: 40, score: 5 },
+  { raw: 70, score: 8 },
+  { raw: 100, score: 10 },
+  { raw: 140, score: 12 },
+  { raw: 190, score: 14 },
+  { raw: 260, score: 16 },
+  { raw: 350, score: 18 },
+  { raw: 480, score: 20 },
+]
+
+// Average of a 6-item original Likert scale (1-7), inspired by (not copied from) the
+// Purpose in Life Test / Life Engagement Test constructs. Self-report — weakest data
+// quality in the battery, included for concept-fit rather than precision.
+const purposeAnchors: AnchorPoint[] = [
+  { raw: 2.0, score: 3 },
+  { raw: 2.8, score: 5 },
+  { raw: 3.8, score: 8 },
+  { raw: 4.5, score: 10 },
+  { raw: 5.0, score: 12 },
+  { raw: 5.5, score: 14 },
+  { raw: 6.0, score: 16 },
+  { raw: 6.5, score: 18 },
+  { raw: 7.0, score: 20 },
+]
+
 const goNoGoAnchors: AnchorPoint[] = [
   { raw: 50, score: 3 },
   { raw: 58, score: 6 },
@@ -914,6 +968,37 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     source: 'Bechara et al. classic paradigm, adapted to 25 trials (clinical version is ~100) — shortened protocol not directly normed',
     anchors: igtAnchors,
   },
+  breath_count: {
+    id: 'breath_count',
+    label: 'Breath-Counting Task',
+    unit: '% accuracy',
+    inputType: 'breath_pct',
+    hint: 'Count breaths in cycles of 1-9, tapping a button on each exhale. A separate button marks the 9th breath. Tap "Lost Count" any time you notice you\u2019ve drifted.',
+    dataQuality: 'strong',
+    source: 'Levinson et al. 2014, replicated by Zanesco et al. — validated mindfulness paradigm',
+    anchors: breathCountAnchors,
+  },
+  stillness_hold: {
+    id: 'stillness_hold',
+    label: 'Stillness Hold',
+    unit: 'seconds',
+    inputType: 'duration_s',
+    hint: 'Sit motionless — no fidgeting, no adjusting. Stop the timer the moment you move.',
+    dataQuality: 'thin',
+    source: 'Estimated benchmark — no direct literature for this specific paradigm',
+    anchors: stillnessAnchors,
+  },
+  purpose_in_life: {
+    id: 'purpose_in_life',
+    label: 'Purpose in Life',
+    unit: 'avg 1-7',
+    inputType: 'likert_survey',
+    hint: '6 short statements, rated 1 (strongly disagree) to 7 (strongly agree). Original items inspired by the Purpose in Life Test and Life Engagement Test constructs. Self-report — the weakest-quality data point in this whole system, included for concept-fit rather than precision.',
+    dataQuality: 'thin',
+    source: 'Original scale inspired by Crumbaugh & Maholick 1964 and Scheier et al. 2006 — not a validated instrument itself',
+    optional: true,
+    anchors: purposeAnchors,
+  },
   go_no_go: {
     id: 'go_no_go',
     label: 'Go/No-Go',
@@ -962,7 +1047,8 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
     core: ['matrix_reasoning', 'n_back', 'symbol_digit', 'stroop'],
   },
   WIS: {
-    core: ['perception_search', 'insight_scenario', 'judgment_igt', 'go_no_go', 'scene_recall'],
+    core: ['perception_search', 'insight_scenario', 'judgment_igt', 'go_no_go', 'scene_recall', 'breath_count', 'stillness_hold'],
+    bonus: ['purpose_in_life'],
   },
 }
 

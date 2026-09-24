@@ -15,6 +15,8 @@ import InsightScenarioTest from './InsightScenarioTest'
 import JudgmentIGTTest from './JudgmentIGTTest'
 import GoNoGoTest from './GoNoGoTest'
 import SceneRecallTest from './SceneRecallTest'
+import BreathCountTest from './BreathCountTest'
+import PurposeInLifeSurvey from './PurposeInLifeSurvey'
 
 interface TestModalProps {
   def: TestDef
@@ -45,6 +47,8 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isJudgmentGame = def.inputType === 'igt_score'
   const isGoNoGoGame = def.inputType === 'gonogo_pct'
   const isSceneRecallGame = def.inputType === 'recall_count'
+  const isBreathGame = def.inputType === 'breath_pct'
+  const isLikertSurvey = def.inputType === 'likert_survey'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -230,6 +234,8 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isJudgmentGame && <JudgmentIGTTest onComplete={commit} />}
         {isGoNoGoGame && <GoNoGoTest onComplete={commit} />}
         {isSceneRecallGame && <SceneRecallTest onComplete={commit} />}
+        {isBreathGame && <BreathCountTest onComplete={commit} />}
+        {isLikertSurvey && <PurposeInLifeSurvey onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>
