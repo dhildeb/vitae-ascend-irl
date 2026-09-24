@@ -1,802 +1,643 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
-interface ScenarioTemplate {
+interface ScenarioOption {
   text: string
-  options: string[]
-  correctIndex: number
+  score: number // 0-4, judgment quality — never shown in the UI
 }
+
+interface ScenarioStage {
+  text: string
+  options: ScenarioOption[]
+}
+
+interface ScenarioTemplate extends ScenarioStage {
+  // Optional second stage: new information arrives after the initial judgment.
+  // Not every scenario needs one — some should confirm, weaken, or reverse the
+  // first read rather than "the second paragraph always has the real answer."
+  followUp?: ScenarioStage
+}
+
+type Confidence = 'low' | 'medium' | 'high'
 
 const BANK: ScenarioTemplate[] = [
   {
-    text: `A merchant in a roadside market offers you a silver dagger for less than half its apparent value. He says he needs coin for his daughter's medicine, but he does not pressure you and readily agrees when you say you need time to think. The dagger bears a maker's mark you've seen on weapons carried by a nearby noble household, although you cannot identify the exact piece. When you ask whether it is stolen, the merchant answers, "Not to my knowledge." A neighboring merchant watches the exchange without speaking, then later talks privately with a town guard. You have enough money to buy the dagger, but doing so would leave you unable to replace damaged climbing equipment tomorrow. What should weigh most heavily in your decision?`,
+    text: `A caravan master asks your party to escort a sealed chest through a mountain pass. He explains that the contents are valuable but ordinary trade goods, and offers a generous bonus if the chest arrives unopened. His papers are legitimate, his guards appear experienced, and he has used the same route for years. During a rest, however, one guard quietly asks whether your party has ever dealt with customs officials in the next city. When questioned, the caravan master says the guard is merely new and nervous. What is the most reasonable conclusion?`,
     options: [
-      `The merchant's calm behavior should carry substantial weight because he does not create urgency, allows you to leave, and appears to have little reason to risk a confrontation over a relatively small sale.`,
-      `The maker's mark and the merchant's qualified answer create enough uncertainty about the dagger's origin that purchasing it would be difficult to justify, even if his explanation about his daughter is completely genuine.`,
-      `The neighboring merchant's private conversation with the guard is the strongest indication of wrongdoing because an uninvolved observer would have little reason to involve the authorities without seeing something suspicious.`,
-      `The climbing equipment should determine the decision because an uncertain opportunity involving a weapon cannot reasonably outweigh equipment that the party already knows it will need tomorrow.`
+      { text: `The chest is probably harmless because the caravan has legitimate papers, an established route, and experienced guards who have no obvious reason to deceive you`, score: 1 },
+      { text: `The guard's question suggests the caravan may be anticipating a customs problem, but that alone does not establish what is inside; the important uncertainty is what the master has not disclosed`, score: 4 },
+      { text: `The master is almost certainly smuggling something because legitimate merchants would have no reason to offer extra money for keeping ordinary trade goods sealed`, score: 0 },
+      { text: `The guard is probably planning to betray the master because asking about customs officials is an unusual question for someone who is supposedly inexperienced`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A village asks your party to investigate a series of nighttime fires. The mayor claims a traveling gang is responsible because two strangers were seen near the first fire. A stablehand says the fires began after a local dispute over grazing rights. Three villagers support the mayor, while two privately say they suspect the mayor's brother, who owns much of the damaged land. You discover that all three witnesses supporting the mayor work for businesses recently funded by the mayor's family. The two accusing his brother admit they dislike him. You can question one person before leaving for the next fire. Who would provide the most useful information to investigate first?`,
+    text: `A village healer asks your party to investigate several people who became sick after drinking from the same spring. The villagers blame a witch who recently moved nearby. The healer privately agrees that the witch is suspicious but points out that the first illness occurred shortly after a new stone drainage channel was built upstream. The channel was inspected and appears structurally sound. A farmer insists his family drank from the spring for decades without trouble. What should receive the greatest weight?`,
     options: [
-      `The mayor, because establishing whether his account changes when confronted with the witnesses' conflicting claims could reveal whether the investigation is being deliberately directed.`,
-      `The stablehand, because their account introduces a concrete local motive that is more specific than the mayor's explanation involving unknown travelers.`,
-      `One of the mayor's employees, because determining whether their support was independently formed or influenced by their financial relationship would clarify the reliability of several witnesses.`,
-      `The mayor's brother, because allowing the accused party to explain his relationship to the damaged land may reveal whether the grazing dispute has been exaggerated.`
+      { text: `The witch's recent arrival deserves the most attention because unexplained illness beginning after a stranger arrives is a meaningful circumstantial connection`, score: 1 },
+      { text: `The farmer's long history with the spring largely rules out contamination because a dangerous water source would probably have harmed people before now`, score: 1 },
+      { text: `The timing of the new drainage channel provides a more direct causal lead than the witch's presence, even though it does not yet prove contamination`, score: 4 },
+      { text: `The healer's suspicion should carry the most weight because she understands local illnesses and has already considered the supernatural explanation`, score: 2 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A captured bandit offers to guide your party to a hidden camp in exchange for leniency. His initial directions match landmarks your scouts independently recognize. He answers questions without hesitation and seems eager to cooperate. Near the end of the journey he says the camp has two entrances and proposes splitting the party so both can be covered at once. The other entrance is only a few minutes away, and delaying would mean traveling through the forest after dark. You cannot determine whether he is lying about either entrance. What is the most defensible response?`,
+    text: `A noble offers your party a contract to protect a remote estate for three weeks. He explains that bandits have recently threatened the region and emphasizes that your safety is his primary concern. The contract pays unusually well and allows you to inspect the grounds beforehand. During the inspection, you learn that the estate's normal guards were dismissed two days ago, the nearby villagers have been warned not to approach the property, and the noble insists that the contract begin immediately. He provides reasonable explanations for each point. What is the strongest concern?`,
     options: [
-      `Follow his proposal but place the strongest members at the more distant entrance, since his accurate information and cooperation so far provide meaningful evidence that he intends to help.`,
-      `Reject the proposal and return to the original route, because any prisoner who suggests dividing a party near an unknown enemy position should be assumed to be attempting an ambush.`,
-      `Ask him to describe both entrances in greater detail and compare his answers against what your scouts already know before deciding whether the additional information justifies separating the party.`,
-      `Agree to split only after securing a promise of leniency from him, since giving him a personal reason to cooperate makes betrayal less likely than it would otherwise be.`
+      { text: `The high payment is the clearest warning because wealthy employers rarely offer substantially more than the normal rate unless they expect extraordinary danger`, score: 2 },
+      { text: `The dismissed guards and restricted villagers suggest the noble is concealing something, making the contract too suspicious to accept regardless of his explanations`, score: 2 },
+      { text: `The individual explanations may each be reasonable, but their combination suggests the party is being asked to enter a situation whose relevant information is being selectively controlled`, score: 4 },
+      { text: `The immediate start is probably the main problem because a legitimate employer should always allow adventurers several days to prepare before accepting a dangerous contract`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A healer arrives in a town during an outbreak and claims to have treated similar illnesses elsewhere. The local physician says the healer is a fraud and points out that the healer's medicines have no recognized guild seal. Several patients say they improved after receiving the healer's treatment. You learn that many of those patients were already recovering before the healer arrived, while two who were seriously ill improved afterward. The healer refuses to reveal the recipe but offers to treat more people for free. The physician's guild has recently lost influence in the town. What should you conclude before deciding whether to support either side?`,
+    text: `Your party finds a wounded scout beside a road. He claims a group of raiders attacked his patrol and says three companions were captured. He correctly identifies the patrol's commander, knows the patrol's normal route, and carries an official insignia. He asks you to follow a trail leading into the forest before the raiders have time to move the prisoners. One detail bothers you: despite claiming to have fled through thick undergrowth while wounded, his clothing has almost no fresh tears or debris. What is the wisest interpretation?`,
     options: [
-      `The healer's results are encouraging but do not establish effectiveness by themselves, while the physician's conflict of interest weakens his accusation without proving the healer is legitimate.`,
-      `The healer's refusal to reveal the recipe is the most important fact because legitimate medicine should be transparent enough for other healers to verify before it is administered.`,
-      `The physician's guild position should receive greater weight because trained practitioners are more likely to recognize dangerous treatments than patients who only observe whether they feel better.`,
-      `The two serious patients who improved after treatment provide the strongest evidence because their condition was severe enough that spontaneous recovery would be less plausible.`
+      { text: `The clothing discrepancy is probably decisive evidence that he staged the attack, because someone fleeing through thick forest should necessarily have visible damage`, score: 1 },
+      { text: `His knowledge and insignia make the story credible overall, so the clothing should be ignored unless stronger evidence directly contradicts the account`, score: 2 },
+      { text: `The clothing is an inconsistency worth investigating, but it should lower confidence rather than automatically overturn otherwise independent evidence supporting his identity`, score: 4 },
+      { text: `The most likely explanation is that he was helped through the forest by an accomplice, meaning the party should assume an ambush is waiting at the end of the trail`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A noble offers your party a contract to escort a shipment through territory where attacks have recently occurred. He provides detailed maps, generous payment, and written guarantees from the city council. A caravan master privately warns you that the noble's shipments have recently been targeted. Another merchant says the attacks stopped after guards began accompanying the caravans. You discover that the noble has already hired two other adventuring groups, neither of which completed the journey. He claims both groups simply abandoned the contract. The shipment is time-sensitive, and delaying would cost you a significant opportunity elsewhere. What is the most important unresolved question?`,
+    text: `A town council hires your party to recover stolen grain. The council claims a nearby clan of hunters is responsible because several clan members were seen near the granary on the night of the theft. The hunters deny it and explain that they were following deer tracks. The stolen grain is later discovered in a barn belonging to a respected merchant who publicly supported the council's reelection. The merchant claims an employee must have hidden it there without his knowledge. What should you conclude?`,
     options: [
-      `Whether the noble is personally trustworthy, since his guarantees and willingness to pay generously matter only if his intentions toward the party are legitimate.`,
-      `Whether the attacks are actually occurring now, since the difference between a current threat and an outdated reputation changes the value of nearly every other piece of evidence.`,
-      `Why the previous adventuring groups abandoned the contract, because their direct experience could reveal information the noble's documents and promises cannot provide.`,
-      `Whether the shipment is valuable enough to attract criminals, because understanding the cargo's value would help determine whether the reported attacks are economically plausible.`
+      { text: `The hunters remain the strongest suspects because their presence near the granary occurred before the grain disappeared and therefore has a more direct connection to the theft`, score: 1 },
+      { text: `The merchant is certainly responsible because stolen goods being found on someone's property is sufficient to establish that the property owner knew about them`, score: 1 },
+      { text: `The discovery substantially changes the evidence, but possession of the grain still requires investigation into access, knowledge, and alternative explanations before assigning responsibility`, score: 4 },
+      { text: `The council probably framed the merchant because political supporters frequently become involved in local corruption when valuable resources are being distributed`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A frightened farmer tells you that a neighboring landowner has been poisoning his livestock. He points to three dead animals and says they all drank from a stream crossing the property line. The neighboring landowner admits the animals died but says several wild animals have also been found dead nearby. You discover an abandoned workshop uphill from both farms. The farmer strongly dislikes the landowner and has previously lost a boundary dispute against him. The landowner offers to let you inspect his property but insists that the workshop is outside his responsibility. What should most influence your next step?`,
+    text: `A wizard asks your party to retrieve a particular book from a ruined library. She says the book contains dangerous knowledge and insists that nobody read it. She provides an unusually detailed description of the shelf where it should be found and warns you that the ruin may contain traps. When you arrive, the book is exactly where she predicted, but another scholar's notes beside it describe the same book as a harmless agricultural treatise. The wizard dismisses the notes as unreliable without reading them. What is the most justified response?`,
     options: [
-      `The farmer's prior dispute with the landowner should make his accusation less reliable, so the investigation should begin by determining whether the farmer has another reason to revive the conflict.`,
-      `The fact that wild animals are also dying makes deliberate poisoning less likely, so the investigation should focus on natural causes before considering either farmer's accusation.`,
-      `The abandoned workshop provides a potentially independent explanation for the deaths, making it more valuable to investigate the shared environmental source before deciding which person's account is credible.`,
-      `The landowner's willingness to permit an inspection should increase confidence in his innocence because someone responsible for poisoning animals would have stronger reasons to prevent outsiders from examining the property.`
+      { text: `Trust the wizard because accurately predicting the book's location demonstrates knowledge of the library that an ordinary manipulator would be unlikely to possess`, score: 2 },
+      { text: `Assume the scholar is correct because written notes created closer to the original source are inherently more reliable than information provided by someone commissioning the mission`, score: 2 },
+      { text: `Recognize that the wizard's warning may be legitimate while still checking the competing evidence, because accurate knowledge of location does not establish the claimed danger`, score: 4 },
+      { text: `Assume the wizard wants the book for herself because refusing to explain the danger while demanding that others avoid reading it is inherently deceptive`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `Your party is preparing to cross a mountain pass. A veteran guide warns that an avalanche is possible because the previous winter left unusually deep snow. A younger scout says the weather has been warm for three days and the slope appears stable. A merchant who crossed yesterday reports no problems, but traveled during a colder morning. The guide admits he has not crossed this particular slope in five years. The scout has crossed it twice this month. A storm is approaching, and waiting until tomorrow may make the crossing impossible for several days. What should matter most?`,
+    text: `A merchant's apprentice reports that his employer has been stealing wages from workers. He gives you account records showing several payments that appear to be missing. The merchant produces a second set of records and says the apprentice altered the first set after being fired for theft. Both records look authentic. A worker confirms that wages were sometimes late but says the merchant eventually paid everything owed. The apprentice becomes angry when asked about the possibility of an accounting error. What matters most before deciding who is lying?`,
     options: [
-      `The scout's recent experience should carry the most weight because direct observation of the current conditions is more relevant than an older warning based on a different season.`,
-      `The guide's avalanche warning should dominate because the potential consequence is severe enough that even uncertain evidence warrants treating the slope as dangerous.`,
-      `The merchant's successful crossing should be decisive because it is the most recent independent evidence that the route can currently be traversed safely.`,
-      `The approaching storm should determine the decision because the opportunity to cross now may disappear, making the cost of precaution potentially greater than the cost of proceeding.`
+      { text: `The apprentice's anger is important because an innocent person would normally remain calm when presenting evidence of wrongdoing`, score: 1 },
+      { text: `The worker's testimony should settle the issue because employees personally receiving wages are better positioned than outsiders to know whether money was actually stolen`, score: 2 },
+      { text: `The conflicting records need to be independently reconciled against transactions or payment evidence, because neither person's confidence establishes which accounting trail is accurate`, score: 4 },
+      { text: `The merchant's accusation of theft is probably retaliatory because employers commonly accuse dissatisfied workers of dishonesty when financial misconduct is discovered`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A respected captain accuses one of his soldiers of stealing supplies. The soldier denies it and says the captain has disliked him since he refused an order last month. Two soldiers witnessed the accusation but both serve directly under the captain. The missing supplies were found in a storage room the accused soldier had access to, although several others did as well. The captain proposes punishing the soldier immediately to prevent "discipline from collapsing." The accused asks only that the storage records be checked. What is the most reasonable course?`,
+    text: `Your party is asked to judge a dispute between two adventuring groups over a discovered ruin. One group has a written map dated six months earlier. The other has a witness who says they found the entrance three weeks ago. The map shows the entrance in roughly the same place but labels the ruin as collapsed. The witness insists the first group must have copied their discovery because the map was never shown to anyone. Both groups accuse the other of lying. What is the strongest inference?`,
     options: [
-      `Delay punishment and inspect the records, because the evidence currently establishes opportunity but does not distinguish the accused from several other people who had the same access.`,
-      `Trust the captain's judgment because maintaining discipline is itself a legitimate concern, and commanders usually have access to contextual information that subordinates do not.`,
-      `Punish the soldier provisionally while continuing the investigation, because a temporary penalty protects discipline without requiring certainty about the accusation.`,
-      `Question the two witnesses first, because their presence during the accusation makes them the most relevant people to determining whether the captain's suspicion is justified.`
+      { text: `The dated map proves the first group knew about the ruin before the witness did, so their claim of independent discovery should be rejected`, score: 2 },
+      { text: `The witness's recent discovery is more persuasive because the ruin's current state matters more than a map that describes conditions from six months earlier`, score: 2 },
+      { text: `The evidence establishes prior knowledge of the location but not necessarily knowledge of the accessible ruin, so the exact meaning of "discovery" remains the disputed issue`, score: 4 },
+      { text: `The groups probably discovered the ruin independently because the map and witness describe slightly different versions of the same location`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A wealthy patron asks your party to recover an heirloom from an abandoned manor. He provides an old map and says the manor has been empty for decades. A local child claims lights appear in the upper windows at night. A groundskeeper says the child often invents stories. When you inspect the manor from outside, you find fresh footprints near the rear entrance and a recently replaced lock. The patron insists nobody has legal reason to be inside. He offers double payment if the heirloom is recovered before dawn. What should you be most cautious about?`,
+    text: `A guard captain tells you that a prisoner attempted escape at midnight. Three guards independently say they heard shouting and saw the prisoner near the outer gate. The prisoner claims the guards attacked him after he refused to sign a confession. You notice that all three guards use nearly identical wording when describing the event, including an unusual phrase none of them normally uses. The captain says this merely proves they coordinated their testimony clearly. What should you infer?`,
     options: [
-      `The child's story, because although children can exaggerate, the report of nighttime activity is independently supported by the fresh footprints and replacement lock.`,
-      `The patron's urgency and unusual payment, because they create an incentive for him to conceal information about who is currently occupying or using the manor.`,
-      `The groundskeeper's dismissal of the child, because his familiarity with the property makes him more likely to know whether the reported activity is unusual.`,
-      `The old map, because a decades-old document is unlikely to accurately describe current entrances, occupants, or hazards inside the manor.`
+      { text: `The identical wording proves the guards rehearsed a false story because truthful witnesses would never describe the same event using similar language`, score: 1 },
+      { text: `The identical wording is not proof of fabrication, but it reduces the independence of the three accounts and means they should not be treated as three separate confirmations`, score: 4 },
+      { text: `The captain is probably telling the truth because coordinating testimony after an incident is a normal way for guards to prevent contradictory memories`, score: 2 },
+      { text: `The prisoner's account should now be accepted because evidence that witnesses discussed their testimony makes every part of their statements unreliable`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A village council asks you to decide whether to exile a man accused of starting a recent fire. Seven villagers claim they saw him near the building shortly before it burned. He admits being there but says he was trying to rescue someone. The rescued person cannot currently be found. The man's previous criminal record contains two convictions for theft, but nothing involving arson. The fire destroyed property belonging to a family that publicly opposed him in a recent dispute. The council wants a decision today because tensions are rising. What should be given the greatest weight?`,
+    text: `A respected innkeeper warns travelers that a particular road is unsafe after sunset. He points to several recent robberies recorded by the town watch. A competing innkeeper says the road is perfectly safe and claims the first innkeeper is spreading fear to attract customers who stay in his establishment instead. You discover that the first innkeeper's records show fewer guests using the road at night since his warning began, while the watch confirms that robberies really did increase. What is the most careful conclusion?`,
     options: [
-      `The seven witnesses should carry substantial weight because multiple independent observations are more difficult to dismiss than the accused person's explanation alone.`,
-      `His previous convictions should reduce confidence in his explanation because a demonstrated willingness to break laws makes further wrongdoing more plausible.`,
-      `The inability to locate the person he claims to have rescued should be treated as the strongest evidence against him because that claim currently lacks independent support.`,
-      `The specific evidence connecting him to the fire should be separated from his character and the political dispute, because neither his prior crimes nor his enemies establish that he caused this fire.`
+      { text: `The first innkeeper is probably manipulating travelers because his warning directly benefits his business even though the robberies themselves are genuine`, score: 2 },
+      { text: `The second innkeeper is probably lying because official robbery records support the first innkeeper's warning and contradict his claim that the road is safe`, score: 1 },
+      { text: `The robberies provide evidence that the warning has a factual basis, while the innkeeper's financial incentive remains relevant to how confidently his motives should be interpreted`, score: 4 },
+      { text: `The increase in robberies proves the road became dangerous because of the first innkeeper's warning, since fewer travelers now use it and criminals have fewer witnesses`, score: 0 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A priest tells your party that a sacred relic has been stolen and asks you to recover it before sunrise. She says the relic protects the town from an ancient curse. A skeptical scholar says the relic is historically valuable but has no known supernatural properties. The priest is visibly terrified and offers the party everything the temple can afford. The relic was last seen shortly before a series of unrelated accidents began. You have no way to determine whether the curse is real. Recovering the relic would require entering a building that may contain armed thieves. What should guide your immediate decision?`,
+    text: `A village elder asks you to remove a statue from the town square because she believes it brings misfortune. Over the last month, three businesses near the statue have failed. The statue was erected shortly before the failures. A young carpenter argues that the failures are caused by a new trade route that bypasses the village. The elder points out that the carpenter has recently built a workshop on that route and therefore has an obvious financial motive. What is the best way to reason about the disagreement?`,
     options: [
-      `The possibility of a genuine supernatural threat should be treated seriously because the timing of the accidents gives the priest's warning some evidentiary support despite the lack of proof.`,
-      `The scholar's skepticism should prevail because there is no established mechanism by which the relic could cause a curse, making the priest's fear insufficient justification for risking the party.`,
-      `The existence of a physical theft should be separated from the supernatural claim, so the decision should depend primarily on the known danger of entering the building and the value of recovering the relic.`,
-      `The priest's willingness to sacrifice the temple's resources is evidence that she sincerely believes the relic is dangerous, so the party should treat her account as credible enough to justify the risk.`
+      { text: `The elder's motive is less important than the timing, because the statue predating several failures is concrete evidence while the carpenter's financial interest is circumstantial`, score: 2 },
+      { text: `The carpenter's motive makes his economic explanation unreliable, so the supernatural explanation should receive greater weight until he can prove he has no financial interest`, score: 1 },
+      { text: `Both explanations contain potentially relevant information, but the strongest test is whether the failures correlate with the trade change or with exposure to the statue rather than who benefits from either explanation`, score: 4 },
+      { text: `The statue should be removed temporarily because doing so is harmless and would test the elder's theory while avoiding the need to determine which explanation is objectively correct`, score: 2 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A traveling judge arrives in a town and announces that a local magistrate has been accepting bribes. The judge presents copies of financial records showing unusual payments. The magistrate says the records are genuine but represent legitimate repayment of old debts. The judge has recently been assigned authority over several neighboring towns and would gain prestige from exposing corruption. A clerk independently confirms that some payments occurred but cannot explain their purpose. The townspeople are already angry with the magistrate. What would be the most useful next step?`,
+    text: `A scout reports seeing an army moving toward your town. She gives the exact number of soldiers, describes their banners, and says they marched silently during the night. Another scout reports seeing campfires in the same direction but estimates a much smaller force. A farmer reports hearing hundreds of horses. Later, you discover that the army is known to use illusion magic. What should you do with the conflicting reports?`,
     options: [
-      `Determine whether the financial records correspond to transactions whose timing and amounts could reasonably match the claimed debts rather than treating the existence of payments as proof of bribery.`,
-      `Trust the judge's investigation because exposing corruption is consistent with the authority of the office and the records provide concrete evidence rather than mere accusations.`,
-      `Interview the townspeople who oppose the magistrate, since their experiences may reveal additional examples of suspicious behavior that the financial records cannot capture.`,
-      `Examine whether the judge personally benefits from the magistrate's removal, because a competing political motive would make the accusation too compromised to rely upon.`
+      { text: `Trust the first scout because precise numbers and banners indicate she observed the force directly rather than relying on rumor`, score: 1 },
+      { text: `Trust the farmer because hearing hundreds of horses provides physical evidence that is less vulnerable to illusion than visual observation`, score: 2 },
+      { text: `Treat the reports as evidence of a possible military presence while lowering confidence in exact numbers and appearance because the known illusion capability affects the reliability of those observations`, score: 4 },
+      { text: `Reject all reports because the possibility of illusion means nobody can establish whether an army is actually present until direct combat occurs`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A companion who has always been generous suddenly refuses to lend you money for an urgent purchase. They explain that they need to preserve their remaining gold for an obligation they cannot discuss. Another companion says this is proof the first has become selfish since acquiring a new position. Later, you learn that the person who refused has recently been sending money to someone in another city. They still refuse to explain why. You have enough information to suspect something has changed but not enough to know what. How should you interpret the refusal?`,
+    text: `A noblewoman asks your party to escort her through a city. She says a political rival has threatened her life. During the journey, she repeatedly chooses crowded streets instead of secluded ones and insists that you remain visible to witnesses. She also refuses to tell you which rival she fears. At one point she quietly changes the route after seeing a particular official. When asked why, she says she simply dislikes him. What is the most reasonable interpretation?`,
     options: [
-      `Treat it as evidence that their priorities may have changed, but avoid assigning a motive until you know what obligation or relationship is consuming their resources.`,
-      `Assume the refusal is justified because their previous generosity establishes a stronger pattern of trustworthy behavior than one unexplained decision can overturn.`,
-      `Suspect that the new position has changed them because the timing of their behavior and unexplained payments provide independent evidence that their loyalties have shifted.`,
-      `Press them for an explanation because withholding information from close companions is itself evidence that whatever they are doing may conflict with the party's interests.`
+      { text: `She is probably inventing the threat because someone genuinely fearing assassination would avoid crowds and explain exactly who is threatening them`, score: 1 },
+      { text: `Her behavior suggests she has a concrete reason to avoid certain people or places, but the evidence does not establish whether she is protecting herself from an assassin, avoiding political exposure, or hiding another concern`, score: 4 },
+      { text: `The official she avoided is almost certainly the person threatening her because changing the route immediately after seeing him is stronger evidence than her refusal to identify the rival`, score: 1 },
+      { text: `She is probably using the party as political protection because remaining visible and refusing to explain her enemies indicates that the real purpose is intimidation rather than personal safety`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A town guard asks your party to help search a warehouse for stolen goods. He says the owner is a known criminal. The owner denies this and points out that the guard previously arrested his business partner. During the search, you find a locked chest containing goods matching items reported stolen. The owner says he bought them from a traveling merchant and has a receipt. The receipt appears genuine, but the merchant's name is unfamiliar. The guard immediately says the receipt is forged. What should you do before treating the chest as proof of guilt?`,
+    text: `A ranger tells you that wolves have become unusually aggressive near a forest settlement. Villagers report attacks on livestock and insist the wolves are being controlled by a druid. You find several carcasses with wounds that resemble wolf bites. Deeper in the forest, you discover the remains of an illegal logging camp and several discarded containers of an unknown substance. The ranger says the substance is irrelevant because wolves have always lived there. What should receive the most attention?`,
     options: [
-      `Accept the chest as strong evidence because possession of recently stolen goods is more concrete than either person's competing account of the transaction.`,
-      `Verify the receipt and determine whether the traveling merchant existed and could plausibly have sold the goods, because that evidence could distinguish knowing possession from an innocent purchase.`,
-      `Trust the guard's conclusion because he has investigated the theft and is more likely than an outsider to recognize the methods used by local criminals.`,
-      `Question the owner about his relationship with the merchant because an honest buyer should be able to provide enough detail to establish that the purchase was legitimate.`
+      { text: `The bite wounds should settle the issue because they demonstrate that wolves are responsible for the attacks regardless of why their behavior changed`, score: 1 },
+      { text: `The druid theory deserves serious consideration because unusually coordinated animal behavior is difficult to explain through ordinary changes in the environment`, score: 1 },
+      { text: `The abandoned logging camp and unknown substance provide a new causal possibility that directly connects human activity with a recent behavioral change and therefore merits investigation`, score: 4 },
+      { text: `The ranger's experience should outweigh the villagers because long-term familiarity with the forest makes his judgment more reliable than observations from frightened residents`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `Your party is asked to escort a diplomat through a crowded festival. Before entering, the diplomat's aide warns you that an assassin may attempt to approach from the eastern gate. A second aide says the western gate is safer. Both appear equally informed. You discover that the first aide secretly owes a large debt to a merchant operating near the eastern gate, while the second aide has family members living near the western gate. Neither admits to having a personal reason for their recommendation. The diplomat wants to leave immediately. What is the best way to handle the conflicting advice?`,
+    text: `A captain asks your party to arrest a merchant accused of selling weapons to rebels. The evidence is a ledger containing several suspicious payments and a courier who claims the merchant ordered the shipments. The merchant admits knowing the courier but says the payments were for legal supplies. You discover that the courier was arrested carrying forged documents in an unrelated investigation. The captain says this does not matter because the ledger is independent evidence. What should you examine next?`,
     options: [
-      `Follow the second aide because the first has a direct financial connection to the area he recommends, while the second's family connection is less likely to create an incentive to mislead.`,
-      `Follow neither recommendation without investigation, because the conflicting incentives make both aides unreliable enough that their warnings should temporarily be disregarded.`,
-      `Choose the eastern gate because the first aide's warning contains more specific information, and specific intelligence is generally more valuable than vague caution.`,
-      `Choose the western gate because the second aide's family presence gives her a reason to understand the area well, while the first aide's debt makes his recommendation suspicious.`
+      { text: `The merchant's explanation should be rejected because people accused of serious crimes commonly invent innocent explanations once they realize investigators have evidence`, score: 1 },
+      { text: `The forged documents make the courier completely unreliable, so the ledger should be treated as proof without considering the courier's testimony further`, score: 1 },
+      { text: `The ledger should be authenticated and its entries independently connected to the alleged shipments, because the courier's credibility and the meaning of the ledger are separate questions`, score: 4 },
+      { text: `The captain's confidence suggests the investigation has already established sufficient evidence, so further examination would risk allowing the merchant to destroy records or escape`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A fisherman reports seeing a dragon flying over the eastern hills three nights in a row. His story spreads quickly because livestock have recently disappeared. A respected hunter says the tracks near the missing animals are too small for a dragon. Another villager claims to have found scales but refuses to show them. You later learn that the fisherman has been trying to sell land near the hills, and a dragon rumor would make the property considerably cheaper. The missing livestock are real, but no one has established how they disappeared. What conclusion is most justified?`,
+    text: `A traveler offers your party a map of a dangerous swamp. He claims he drew it himself while searching for his missing brother. The map contains several accurate landmarks, but one bridge is marked where you know no bridge exists. The traveler says the bridge may have collapsed recently. A local guide says there has never been a bridge there, but admits she has not visited that part of the swamp in years. What should you infer?`,
     options: [
-      `The dragon story is probably false because the fisherman's financial incentive provides a strong reason to fabricate the sightings.`,
-      `The dragon explanation remains plausible because the missing livestock and repeated sightings constitute multiple pieces of evidence even though the witness has a possible motive.`,
-      `The livestock disappearances should be investigated independently from the dragon claim because they are established facts while the explanation connecting them remains uncertain.`,
-      `The hunter's tracks should outweigh the sightings because physical evidence is inherently more reliable than testimony from someone with a financial interest.`
+      { text: `The map is probably fraudulent because a single false landmark undermines confidence in the entire document and suggests the traveler invented his story`, score: 1 },
+      { text: `The map should be trusted because several accurate landmarks demonstrate that the traveler genuinely explored the swamp and therefore probably knows the route`, score: 2 },
+      { text: `The map contains useful but imperfect information; the false bridge should be treated as an unresolved discrepancy rather than allowing either one error or several correct details to settle its overall reliability`, score: 4 },
+      { text: `The local guide should be trusted because long familiarity with the region is more reliable than a recently produced map created by someone with an emotional reason to search for a missing person`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A newly appointed commander orders your party to abandon a fortified position and move to a nearby village. She explains that enemy scouts have discovered your location. A veteran soldier says the commander is inexperienced and may be panicking. Another soldier confirms seeing scouts on the ridge. The village has poor defenses but contains civilians who could be evacuated if warned early. Remaining would preserve your strong position but could expose the village to an attack. Moving would protect the village but leave your party in open terrain. What should be considered first?`,
+    text: `A temple asks you to investigate why its offerings have been disappearing. The priest suspects thieves because only valuable offerings vanish. A novice suspects a supernatural spirit because several candles extinguish shortly before each disappearance. You discover that the offerings are stored beside a poorly sealed ventilation shaft, and the temple's night watchman is the only person with a key to the room. The watchman has a clean record and seems genuinely offended by the suspicion. What is the strongest next step?`,
     options: [
-      `The commander's lack of experience, because a new leader is more likely to overreact to ambiguous signs of enemy activity than someone with an established record.`,
-      `The confirmed sighting of enemy scouts, because it provides concrete evidence that the position may no longer be secure regardless of whether the commander is personally reliable.`,
-      `The civilians in the village, because protecting noncombatants should outweigh the tactical advantages of remaining in a position that may already be compromised.`,
-      `The veteran soldier's assessment, because his experience gives him a better basis for recognizing whether the commander's interpretation of the scouts is reasonable.`
+      { text: `Investigate the watchman first because exclusive access makes him the most obvious suspect, regardless of his clean record or emotional reaction`, score: 2 },
+      { text: `Investigate the ventilation shaft and physical access patterns because the observed disappearances may have a mundane mechanism that does not require assuming either theft by the watchman or supernatural involvement`, score: 4 },
+      { text: `Investigate the candles because their repeated extinguishing is a distinctive pattern that ordinary explanations do not adequately account for`, score: 1 },
+      { text: `Accept the priest's theft theory because valuable offerings disappearing selectively is stronger evidence than the novice's interpretation of candle behavior`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A scholar claims that a newly discovered ruin belongs to an ancient civilization previously thought to have never reached this region. She presents inscriptions that appear to support her theory. Another scholar says the inscriptions were copied from a known culture and may have been planted recently. The first scholar has spent ten years studying the civilization and would gain considerable prestige if the discovery were authentic. The second scholar has publicly criticized her work before. Both agree that the physical structure is genuinely ancient. What piece of information would most help distinguish their competing explanations?`,
+    text: `Your party is deciding whether to cross a frozen lake. A local fisherman says the ice is safe because he crossed it yesterday. Another fisherman says the ice is unsafe because two days ago he heard cracking near the eastern shore. You observe that the temperature has risen substantially since yesterday, and several patches of snow have melted. The first fisherman says the weather is irrelevant because the lake froze thickly this winter. What should matter most?`,
     options: [
-      `Whether the first scholar has previously made successful discoveries involving the same civilization, because a strong record would make her interpretation more credible.`,
-      `Whether independent dating and analysis show that the inscriptions were created at the same time as the ancient structure rather than added later.`,
-      `Whether the second scholar can provide another example of copied inscriptions, because a demonstrated pattern would weaken the first scholar's interpretation.`,
-      `Whether other scholars consider the first researcher trustworthy, because professional reputation can help resolve disputes when direct evidence is difficult to interpret.`
+      { text: `The first fisherman's recent crossing is strongest because direct experience on the lake provides more relevant evidence than a general concern about changing weather`, score: 2 },
+      { text: `The second fisherman's warning is strongest because hearing cracking is direct evidence of unstable ice and should outweigh observations that do not involve actual crossings`, score: 2 },
+      { text: `The current conditions matter more than either historical crossing because ice safety can change rapidly, making yesterday's successful crossing weak evidence for today's conditions`, score: 4 },
+      { text: `The winter's thick ice should dominate the decision because substantial seasonal thickness makes short-term temperature changes unlikely to alter the lake's overall safety`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A member of your party repeatedly volunteers to take the most dangerous position during fights. At first everyone interprets this as bravery. Later, you notice that they become unusually quiet whenever plans are made that would give them a less central role. Another companion says this proves they crave admiration. The person denies it and says they simply dislike watching others take unnecessary risks. You have no evidence that they have deliberately endangered anyone. What is the wisest interpretation?`,
+    text: `A captain reports that one of your party members has been secretly meeting with an enemy agent. The captain shows you a witness statement and says the meetings occurred three times. Your companion admits meeting the person but says they were exchanging information intended to protect the town. The witness is a rival adventurer who has previously argued with your companion. The captain says the rival's motive is irrelevant because the meetings themselves are confirmed. What distinction is most important?`,
     options: [
-      `Their behavior is probably driven by a desire for recognition because volunteering for danger while resisting less visible roles suggests that attention matters to them.`,
-      `Their stated explanation should be accepted because there is no evidence that their behavior has harmed anyone, and motives should not be inferred from personality patterns alone.`,
-      `There are several plausible motives for the behavior, so the important issue is whether their preference creates recurring strategic problems rather than determining which motive is secretly correct.`,
-      `Their willingness to take danger should be encouraged because whatever their motive, the party benefits from having someone willing to accept risks others avoid.`
+      { text: `The rival's hostility makes the testimony too biased to consider because a person with a personal dispute cannot provide reliable evidence`, score: 1 },
+      { text: `The meetings being confirmed establishes that contact occurred, but it does not by itself establish the purpose of the contact, which is the central unresolved question`, score: 4 },
+      { text: `Your companion's explanation should be accepted because admitting the meetings voluntarily is evidence that they have nothing important to hide`, score: 2 },
+      { text: `The captain is probably correct because secret meetings with an enemy agent are inherently suspicious and require no additional evidence about what was discussed`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A caravan reaches a fork in the road. A sign says the northern route is closed because of landslides. A local farmer insists the sign is outdated and says he used the road yesterday. A merchant says he would never trust the farmer because the farmer's land lies beside the southern route and benefits when travelers avoid the north. Your map shows the northern route as shorter, but it has no recent information. Rain began falling heavily an hour ago. What should your party do?`,
+    text: `A wealthy patron asks your party to recover a stolen painting. She gives you a detailed description of the thief and says the painting has enormous sentimental value. Her servants confirm the theft occurred. At an auction, you find a painting matching her description being sold by a collector who claims to have bought it legally from an estate. The patron immediately demands that you seize it. The collector produces a purchase receipt dated before the alleged theft. What is the most appropriate conclusion?`,
     options: [
-      `Take the northern route because the farmer provides recent firsthand evidence, while the merchant's economic interest gives him an obvious reason to discourage travelers from using it.`,
-      `Take the southern route because the official sign and current rain together provide stronger evidence of a landslide than one person's report that the road was passable yesterday.`,
-      `Delay the journey until the weather clears, because neither route can currently be established as safe enough to justify choosing between conflicting accounts.`,
-      `Ask the farmer whether he personally observed a landslide before traveling yesterday, because distinguishing direct observation from hearsay would determine how much weight his report deserves.`
+      { text: `The collector is probably lying because a genuine owner would be able to identify a stolen painting more convincingly than someone relying on a receipt`, score: 1 },
+      { text: `The patron's identification should settle the issue because sentimental owners are uniquely capable of recognizing their own possessions even when documentation conflicts`, score: 1 },
+      { text: `The competing claims require establishing provenance and ownership history rather than treating recognition, urgency, or a single receipt as automatically decisive`, score: 4 },
+      { text: `The collector's receipt proves the painting cannot be stolen because documentation of a purchase establishes legitimate ownership regardless of when or from whom it was acquired`, score: 1 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A child in a village disappears. The parents immediately accuse a traveling stranger who was seen near the house. The stranger admits speaking with the child but says the child ran toward the river afterward. A fisherman independently reports seeing a small figure near the river around the same time. The parents are convinced the stranger is responsible because he cannot explain why he was speaking to the child. You learn that the stranger has been traveling alone for several weeks and has no local connections. What should most influence your investigation?`,
+    text: `A healer recommends that your party avoid a certain mushroom because three people became ill after eating it. A druid says the mushroom is harmless and claims the illness was caused by spoiled meat served at the same meal. You learn that all three sick people ate the mushroom, but only one ate the meat. The healer points out that the three victims also shared the same drinking water. What is the strongest inference?`,
     options: [
-      `The fisherman's independent observation should move attention toward the river because it provides evidence about the child's actual movements rather than the stranger's unexplained presence.`,
-      `The stranger's inability to explain the conversation should remain central because innocent people should normally be able to explain why they approached a missing child.`,
-      `The parents' certainty should be taken seriously because they know their child and are more likely to recognize behavior that would have caused the child to distrust someone.`,
-      `The stranger's lack of local connections should make him more suspicious because an outsider has fewer social ties that would discourage harmful behavior.`
+      { text: `The mushroom is the most likely cause because every sick person consumed it while the other proposed causes do not account for all three cases`, score: 2 },
+      { text: `The water is the most likely cause because all three victims shared it and therefore it provides the broadest common exposure`, score: 2 },
+      { text: `The mushroom hypothesis has stronger support than the meat explanation, but the shared water remains a competing exposure that prevents the evidence from establishing causation by itself`, score: 4 },
+      { text: `The druid's explanation should be rejected because the fact that one healthy person ate the meat makes spoiled meat an impossible cause of illness`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A retired soldier tells your party that a particular inn is dangerous and should be avoided. He gives a detailed account of an ambush that occurred there years ago. The innkeeper says the soldier has a personal grudge against him after being expelled for fighting. Two other travelers report that they stayed there recently without incident. The soldier's account contains details that appear impossible to verify. The innkeeper has no obvious reason to know whether you have heard the soldier's story. What is the most reasonable conclusion?`,
+    text: `A merchant asks your party to deliver a message to a distant city. He gives you a sealed letter and says it concerns a routine business dispute. He offers to pay extra if you arrive within two days. Along the road, a guard recognizes the seal and quietly tells you that the merchant has recently been involved in a legal dispute with the city magistrate. The merchant later sends a messenger asking whether you opened the letter. What should you make of this?`,
     options: [
-      `The inn is probably safe because multiple recent travelers contradict a single old accusation, while the soldier's personal dispute gives him reason to exaggerate.`,
-      `The soldier's warning should still be treated as meaningful because firsthand experience of danger can remain relevant even when the witness has an obvious personal motive.`,
-      `The conflicting accounts mean the inn's current safety cannot be established, so your decision should depend primarily on how costly it would be to choose another place.`,
-      `The innkeeper's past conflict with the soldier is less important than the travelers' recent experiences because current observations should normally outweigh historical testimony.`
+      { text: `The merchant is probably involved in criminal activity because unusually high urgency combined with concern about the letter being opened is inconsistent with routine business`, score: 2 },
+      { text: `The letter is probably harmless because the merchant trusted the party enough to carry it rather than sending a professional courier under his own name`, score: 1 },
+      { text: `The circumstances justify increased caution about the letter's importance, but they do not establish its contents or the merchant's purpose without additional evidence`, score: 4 },
+      { text: `The guard's information proves the letter concerns the magistrate because the merchant's legal dispute provides an obvious motive for sending a secret message`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A magical artifact is discovered in a ruined temple. It appears to grant one person a powerful ability but causes exhaustion after each use. A scholar argues that it should be studied before anyone touches it. A desperate village leader wants to use it immediately to defend against raiders expected within two days. Your party has no expertise with the artifact. The raiders may never arrive, but if they do, the village has little chance of surviving without additional help. Destroying the artifact would remove both the potential benefit and the unknown danger. What consideration should dominate?`,
+    text: `A village repeatedly loses livestock near the same stretch of road. Several farmers blame a large predator because tracks resembling those of a bear have been found nearby. A hunter points out that the tracks are unusually shallow and lack claw marks. Another farmer says the animals were probably killed by a monster because the wounds are too clean for a normal predator. You find that every carcass was left beside a fence with a broken section. What should you investigate first?`,
     options: [
-      `The possibility of immediate danger should favor using the artifact because refusing a potentially powerful defense could expose innocent people to a preventable disaster.`,
-      `The lack of expertise should favor studying the artifact because an unknown magical effect could create consequences worse than the threat it is intended to solve.`,
-      `The possibility that the raiders never arrive should favor preserving the artifact because using it now would create a real cost in response to a hypothetical threat.`,
-      `The option to destroy the artifact should receive priority because removing an unknown source of danger prevents both the raiders and the artifact from determining the village's fate.`
+      { text: `The monster theory, because unusually clean wounds and repeated attacks indicate a predator unlike any ordinary animal known in the region`, score: 1 },
+      { text: `The bear theory, because repeated tracks near the attacks provide direct physical evidence even if individual details about the tracks are imperfect`, score: 2 },
+      { text: `The broken fence sections, because they offer a repeatable physical connection between the locations of the attacks and a possible means of access`, score: 4 },
+      { text: `The hunter's expertise, because his familiarity with animal tracks makes his interpretation more reliable than observations made by frightened farmers`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A respected guildmaster publicly accuses a young apprentice of stealing rare materials. The apprentice admits taking some materials but says they were discarded items that the guildmaster had told apprentices they could use. Two other apprentices confirm hearing that instruction, although neither witnessed the specific incident. The guild's written policy says discarded materials remain guild property. The guildmaster says the apprentice is being punished because dishonesty must be discouraged. The apprentice has recently criticized the guild's leadership. What is the central issue to resolve?`,
+    text: `A soldier returns from a battle claiming the enemy commander was killed. He provides the commander's distinctive sword as proof. Another soldier says the commander survived and was seen retreating. The first soldier explains that the second soldier was injured and confused during the battle. You later learn that the sword was taken from the commander's tent before the battle ended, but nobody knows who carried it afterward. What should happen to your confidence in the first report?`,
     options: [
-      `Whether the apprentice actually took materials without authorization, because the existence of a general guild policy does not establish whether an exception was communicated in this particular case.`,
-      `Whether the two apprentices are telling the truth, because their testimony is the only evidence supporting the claim that the apprentice believed the materials were available.`,
-      `Whether the apprentice's criticism of the guild influenced the punishment, because a conflict between them could explain why a minor violation has become unusually serious.`,
-      `Whether the guildmaster's stated policy is reasonable, because an unfair rule should not be treated as sufficient justification for punishing someone who acted according to common practice.`
+      { text: `It should remain high because possession of the commander's distinctive sword is strong physical evidence even if its exact chain of possession is uncertain`, score: 1 },
+      { text: `It should fall substantially because the sword no longer establishes that the first soldier personally witnessed the commander's death or even obtained it after the battle`, score: 4 },
+      { text: `It should remain unchanged because the second soldier's injury makes his testimony unreliable regardless of what happened to the sword`, score: 1 },
+      { text: `It should reverse entirely in favor of the second soldier because evidence discovered to be ambiguous cannot contribute to either explanation`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `Your party is offered shelter by a family during a dangerous storm. The family seems hospitable and asks only that you remain indoors until morning. Their house contains several locked rooms, and one family member becomes visibly uncomfortable when you ask about them. Later, you hear what sounds like movement behind one of the doors. Your companions want to investigate while the family sleeps. One argues that hiding something is itself suspicious. Another says entering a private room without evidence of danger would be unjustified. The storm makes leaving difficult but not impossible. What is the best immediate approach?`,
+    text: `A town's crime rate appears to double after a new watch captain takes office. The mayor blames the captain for being ineffective. The captain says the increase reflects better reporting because residents now trust the watch enough to report crimes. You examine records and discover that the number of reported minor thefts increased sharply, while reported violent crimes remained nearly unchanged. What is the most careful interpretation?`,
     options: [
-      `Investigate the locked rooms quietly because the family has already accepted responsibility for your safety, and unexplained activity inside their home creates enough concern to justify checking.`,
-      `Leave immediately because the combination of secrecy, locked rooms, and nighttime movement creates a pattern too risky to ignore even without proof of wrongdoing.`,
-      `Remain cautious but avoid intrusion unless additional evidence indicates an immediate threat, because discomfort and privacy are ambiguous signals rather than proof of hostile intent.`,
-      `Confront the family directly and demand that the rooms be opened, because honest hosts should have nothing to fear from a straightforward request made by their guests.`
+      { text: `The captain is probably responsible because a sudden increase in recorded crime after a leadership change is evidence that the watch has become less effective`, score: 1 },
+      { text: `The mayor is probably correct because violent crimes remaining stable means the increase in minor theft reports cannot be explained by improved reporting`, score: 2 },
+      { text: `The statistics show an increase in recorded incidents, but the change in reporting behavior means they cannot by themselves establish that the underlying crime rate doubled`, score: 4 },
+      { text: `The captain's explanation should be accepted because whenever reported crime increases after a leadership change, improved reporting is the most likely explanation`, score: 2 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A messenger arrives claiming that an allied army has been defeated. He provides the name of the battlefield, the commanders involved, and a detailed description of the retreat. Your own scouts reported the army was advancing successfully yesterday. The messenger is exhausted and carries a military insignia, but his horse is missing and his clothing has no visible blood or damage. A second messenger arrives twenty minutes later with the same basic report but gives a different account of how the commander died. The enemy is close enough that delaying your response could matter. What should you do first?`,
+    text: `A wizard offers to remove a curse from one member of your party. She explains that the ritual is safe but will temporarily make the target forget one day of recent memories. She has successfully performed the ritual many times. A second wizard warns that the procedure can permanently erase memories if interrupted. The first wizard says the second wizard is merely jealous. The second wizard admits they have never personally seen the ritual fail. What is the most important consideration?`,
     options: [
-      `Trust the first messenger because his detailed knowledge and military insignia provide stronger evidence than the second report's inconsistency about a single detail.`,
-      `Treat the reports as uncertain but immediately adjust your plans for the possibility of defeat, because waiting for certainty may impose greater costs than preparing for a dangerous scenario.`,
-      `Reject both reports until a surviving officer confirms them, because contradictory accounts make the messengers too unreliable to justify changing military plans.`,
-      `Assume the second messenger is more reliable because arriving later gives him more opportunity to receive updated information about the battle and its aftermath.`
+      { text: `The first wizard's experience should settle the matter because repeated successful use is stronger evidence than a theoretical risk described by someone without firsthand experience`, score: 2 },
+      { text: `The second wizard's warning should be accepted because any possibility of permanent memory loss makes the ritual too dangerous to consider`, score: 1 },
+      { text: `The decision depends on the severity of the curse, the frequency and consequences of interruption, and the reliability of evidence about the ritual's failure mode rather than either wizard's personal dispute`, score: 4 },
+      { text: `The first wizard is probably trustworthy because openly acknowledging temporary memory loss demonstrates that she is being transparent about the ritual's risks`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A farmer asks your party to settle a dispute with a neighbor over a damaged fence. The farmer says his neighbor deliberately broke it to let animals into his crops. The neighbor says the fence collapsed during a storm. You inspect the fence and find that several posts are rotten while one has a fresh axe mark. The farmer owns an axe matching the width of the mark. The neighbor's animals were found inside the field, but the farmer admits he moved them there after discovering the damage. Both men have been feuding for years. What is the most defensible conclusion?`,
+    text: `A group of villagers asks your party to escort them through monster territory. They insist that the safest route is along a particular road because their elders have used it for generations. A scout suggests a newer trail through the hills because monster tracks are rarer there. The villagers object that the hills contain dangerous cliffs. When you inspect the road, you find recent monster tracks but no signs of attacks. The hill trail has no monster tracks but shows several fresh human footprints. What should you consider?`,
     options: [
-      `The farmer probably damaged the fence because the axe mark matches his tool and he has a direct conflict with the neighbor.`,
-      `The neighbor probably caused the damage because his animals were found inside the field and he benefits from the fence being open.`,
-      `The fence was likely already failing, but the fresh axe mark means deliberate interference remains possible and cannot be resolved from the current evidence alone.`,
-      `The long-standing feud makes both accounts too biased to trust, so the dispute should be treated as a private matter rather than investigated further.`
+      { text: `The traditional road is safer because the villagers' generations of experience outweigh the possibility that recent tracks indicate danger without actual attacks`, score: 1 },
+      { text: `The hill trail is safer because the absence of monster tracks is direct evidence that monsters do not use it even though humans have recently traveled there`, score: 2 },
+      { text: `Neither route can be judged from one indicator alone; monster presence, terrain hazards, recent human activity, and the villagers' experience all represent different kinds of risk`, score: 4 },
+      { text: `The villagers are probably hiding something because their refusal to use the hill trail despite fewer monster tracks suggests they know about a danger they do not want to reveal`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A companion tells you that another member of the party has been secretly taking extra shares of food. The accusation comes with a precise count of missing portions. You check the supplies and find that the count is accurate. The accused person says they have been giving some food to a sick animal outside camp. You later discover evidence that an animal has indeed been eating near the campsite. The accuser insists this is irrelevant because "taking party food without asking is still theft." The accused never told anyone about the animal. What should be separated before judging the situation?`,
+    text: `A respected judge asks your party to testify about a fight you witnessed in a tavern. One participant struck first according to your memory, but the room was crowded and the fight lasted only seconds. Another witness confidently says the opposite. A third witness agrees with you but admits they were looking away immediately before the first blow. The judge asks which witness is "most credible." What is the best response?`,
     options: [
-      `Whether the accused took the food and whether they had permission are distinct questions from whether the food was ultimately used for a sympathetic purpose.`,
-      `Whether the animal was genuinely sick should determine the matter because a compassionate reason can justify taking resources that would otherwise be considered stolen.`,
-      `Whether the accuser knew about the animal should determine the credibility of the accusation because failing to mention relevant context makes the report potentially malicious.`,
-      `Whether the party's food supply can tolerate the missing portions should be the main consideration because intent matters less when the material consequences are small.`
+      { text: `Your own memory should receive the most weight because firsthand observation is inherently more reliable than another person's conflicting recollection`, score: 2 },
+      { text: `The confident witness should receive the most weight because confidence is useful evidence when two people remember the same event differently`, score: 1 },
+      { text: `The testimony should be separated into what each witness actually observed, because confidence and agreement do not compensate for limited visibility at the crucial moment`, score: 4 },
+      { text: `The third witness should be preferred because admitting uncertainty is strong evidence that the rest of their testimony is honest`, score: 2 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A city introduces a new law requiring travelers to register magical weapons. A magistrate says the rule is necessary because several recent crimes involved enchanted blades. A merchant argues the law is really intended to weaken independent adventurers. You learn that violent incidents involving magical weapons have increased, but the city has also recently granted the magistrate's family a contract to provide security services. The law applies equally to citizens and visitors. Registration takes ten minutes and costs a small fee. What is the most useful way to assess the situation?`,
+    text: `A mining company claims that a nearby river became cloudy because of an unusually heavy spring flood. A group of villagers claims the mine is dumping waste. You observe that the river is clear upstream and cloudy downstream from the mine. The company produces records showing that its waste system passed inspection two months ago. The villagers produce photographs showing cloudy water but cannot identify when the photographs were taken. What should receive the greatest weight?`,
     options: [
-      `The magistrate's family's financial interest should make the law suspect because a conflict of interest undermines the credibility of the stated safety justification.`,
-      `The increase in magical-weapon crimes should make the law reasonable because the city has identified a genuine security problem that the regulation could address.`,
-      `The merchant's concern should be taken seriously because restrictions affecting adventurers may have political consequences even when they are presented as neutral safety measures.`,
-      `The law's justification and the magistrate's personal incentive should be evaluated separately, including whether registration actually addresses the identified risk rather than assuming either motive settles the question.`
+      { text: `The inspection records should settle the dispute because an officially approved waste system demonstrates that the mine was operating within acceptable limits`, score: 2 },
+      { text: `The photographs should settle the dispute because visual evidence of cloudy water is more direct than technical records about a waste system`, score: 1 },
+      { text: `The upstream/downstream difference provides a meaningful clue about a localized source, but establishing causation still requires determining whether the mine released anything capable of producing the observed change`, score: 4 },
+      { text: `The flood explanation is most reasonable because natural flooding is common and the mine's recent inspection provides evidence against deliberate contamination`, score: 1 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A scout reports that a bridge ahead has collapsed. He says he saw the damage himself. A second scout says the bridge is intact but admits he viewed it from a distance through heavy rain. The first scout is known for being cautious and has previously delayed parties unnecessarily. The second scout is known for taking risks. Your map shows no alternate crossing for twenty miles. The river is currently swollen. What should your party do?`,
+    text: `A prisoner tells your party that the dungeon's western wall contains a secret passage. He gives precise directions and correctly identifies several guards' routines. He asks for nothing except that you leave the dungeon without him. A guard captain says the prisoner is manipulating you because he has attempted escape before. When you inspect the wall, you find evidence that stones have recently been moved. The captain says the prisoner probably created the evidence himself. What should you conclude?`,
     options: [
-      `Trust the first scout because direct observation of the bridge is stronger evidence than a distant observation made under poor conditions.`,
-      `Trust the second scout because the first scout's history of excessive caution suggests his report may again exaggerate the danger.`,
-      `Approach the bridge carefully enough to verify its condition without committing the party to crossing, provided doing so does not itself create an unacceptable risk.`,
-      `Avoid the river entirely because the consequences of a collapsed bridge are severe enough that uncertainty should always favor retreat.`
+      { text: `The prisoner is probably truthful because providing information that can be independently checked is strong evidence that he is not simply trying to manipulate the party`, score: 2 },
+      { text: `The captain is probably truthful because a prisoner with a history of escape attempts has a clear motive to create a false opportunity`, score: 2 },
+      { text: `The physical evidence supports the possibility of a passage, but neither the prisoner's motive nor the captain's accusation establishes whether the passage is genuine or safe to use`, score: 4 },
+      { text: `The passage is probably a trap because both the prisoner's history and the newly moved stones suggest deliberate preparation for an escape attempt`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A respected elder asks your party to remove a young man from the village because he has become "dangerously unpredictable." The elder cites three recent arguments and says several villagers are afraid of him. The young man admits the arguments but says each began after the elder's family took land belonging to his parents. Two witnesses support the elder, while another says the young man has never threatened anyone physically. You find no evidence of violence. The village wants you to act before the dispute escalates. What should be your primary concern?`,
+    text: `A guild offers your party a contract to investigate thefts from its warehouse. The guildmaster says the losses are becoming serious and insists that an employee must be responsible. You discover that the warehouse inventory system was changed three weeks before the losses increased. The guildmaster says the change merely modernized the records. An accountant privately says the new system is difficult to audit but refuses to accuse anyone. What deserves attention first?`,
     options: [
-      `Whether the young man's behavior creates a concrete and imminent risk rather than treating social conflict and anger as equivalent to a demonstrated threat of violence.`,
-      `Whether the elder's witnesses are telling the truth, because their testimony is necessary to establish whether the young man has actually become dangerous.`,
-      `Whether the land dispute is legitimate, because resolving the original grievance may remove the emotional cause of the young man's recent behavior.`,
-      `Whether the villagers are frightened enough to justify intervention, because a community's collective perception of danger can itself become destabilizing if ignored.`
+      { text: `The employees deserve investigation because theft from a warehouse normally requires someone with physical access and opportunity to remove the goods`, score: 2 },
+      { text: `The guildmaster should be treated as the main suspect because he controls the inventory system and therefore has the greatest opportunity to manipulate the records`, score: 1 },
+      { text: `The change in recordkeeping is an important alternative explanation because apparent losses may result from accounting errors rather than physical theft, and it can be tested independently`, score: 4 },
+      { text: `The accountant should be questioned aggressively because refusing to accuse anyone despite recognizing a problem suggests they are protecting the person responsible`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A wizard offers to remove a curse from one of your companions. He explains that the procedure has a 70 percent chance of success and a 10 percent chance of permanently worsening the curse. The remaining cases produce no meaningful change. The companion currently suffers from the curse but can function normally with minor discomfort. A second wizard claims the first is exaggerating the danger because he wants to sell an alternative treatment later. Neither wizard can provide independent evidence for their claims. What should matter most?`,
+    text: `A traveler warns your party not to enter a particular valley because "people disappear there." He describes three disappearances in detail. A local priest confirms that three travelers have indeed gone missing but says all three were last seen during winter storms. The traveler insists the storms are merely when the valley's curse becomes active. You learn that the valley contains several unmarked ravines and receives little traffic during winter. What is the strongest interpretation?`,
     options: [
-      `The first wizard's stated success rate, because quantified information is more useful than the second wizard's unsupported accusation about his motives.`,
-      `The companion's current ability to function, because an intervention with a meaningful chance of permanent harm should require stronger justification when the existing condition is manageable.`,
-      `The second wizard's warning, because a competing expert has identified a potential conflict of interest in the first wizard's recommendation.`,
-      `The possibility of permanent worsening, because avoiding irreversible harm should take priority over the uncertain possibility of improving a condition that is already tolerable.`
+      { text: `The curse remains plausible because three independent disappearances occurred in the same location and the traveler knows details that appear difficult to invent`, score: 1 },
+      { text: `The priest's explanation is probably correct because winter storms provide an obvious natural explanation for people disappearing in an area with dangerous terrain`, score: 2 },
+      { text: `The disappearances are real, but the evidence does not distinguish supernatural danger from ordinary environmental hazards, so the location is risky without proving the claimed cause`, score: 4 },
+      { text: `The traveler is probably exploiting fear because describing disappearances in detail while refusing to accept natural explanations suggests a deliberate attempt to frighten outsiders`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A caravan master tells you that one of his guards has been stealing from travelers. The guard denies it and says the master wants him gone because he refused to participate in an illegal side business. The master produces three complaints from travelers, but each complaint describes missing goods from a different caravan and none identifies the guard directly. The guard has access to the cargo while traveling. A second guard says he has never seen the accused steal anything but admits the accused has argued with the master. What is the most appropriate interpretation?`,
+    text: `A commander tells your party that an approaching army is much larger than it appears because the enemy is using decoy camps. A scout disagrees and says the commander is exaggerating to justify requesting reinforcements. You inspect the valley and find numerous small fires, but many are arranged in places where soldiers would have difficulty defending themselves. You also find wagon tracks leading away from several camps. What should you infer?`,
     options: [
-      `The complaints make the guard the most likely culprit because repeated losses combined with access to the cargo create a meaningful pattern even without direct observation.`,
-      `The master's accusation should be treated cautiously because the alleged thefts also fit the possibility of a broader problem involving cargo security or other people with access.`,
-      `The second guard's inability to provide direct evidence should reduce confidence in the accusation because a fellow guard would likely have noticed repeated theft.`,
-      `The guard's claim about illegal business should be investigated first because proving the master's misconduct could establish a motive for fabricating the theft accusation.`
+      { text: `The commander is probably exaggerating because poorly positioned camps and departing wagons suggest the visible force is smaller than reported`, score: 2 },
+      { text: `The scout is probably correct because physical evidence of camps that cannot be defended makes the commander's claim about a large army implausible`, score: 2 },
+      { text: `The evidence is consistent with deliberate decoys but does not establish their purpose or scale, so the appropriate conclusion is increased uncertainty about the visible camp count`, score: 4 },
+      { text: `The camps must be genuine because wagon tracks demonstrate that supplies were delivered and therefore soldiers must have occupied the positions`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A group of villagers claims a forest shrine has become haunted because anyone who spends the night nearby experiences nightmares. A ranger says the area is harmless and attributes the stories to fear. You spend one evening there and experience no unusual dreams. Later, you discover that several villagers who reported nightmares had recently been sleeping in a nearby cave where a strange-smelling fungus grows. The ranger had never inspected the cave. What should your experience change?`,
+    text: `A woman approaches your party claiming that her brother was imprisoned unjustly. She gives you his name, explains where he was arrested, and accurately describes the courthouse. She asks you to deliver a message to him. A clerk confirms the brother is imprisoned but says the woman has never visited him. The woman explains that she is afraid of being recognized by the guards. Later, you learn she and her brother have publicly argued for years. What is the most reasonable interpretation?`,
     options: [
-      `It should substantially reduce confidence in the haunting because your personal experience provides direct evidence that the claimed effect does not occur reliably.`,
-      `It should have limited influence because one person's failure to experience the phenomenon does not explain why several others reported similar symptoms.`,
-      `It should support the ranger's explanation because the absence of nightmares during a controlled observation suggests fear is causing the reports.`,
-      `It should be treated as evidence against the villagers because firsthand experience is more reliable than secondhand stories about supernatural events.`
+      { text: `She is probably lying about caring about her brother because their public arguments and lack of prison visits contradict the emotional story she tells`, score: 1 },
+      { text: `The clerk's statement proves she has no legitimate connection to the prisoner because a genuine relative would normally have visited the jail`, score: 1 },
+      { text: `Her relationship with her brother may be complicated, but the available evidence does not establish her motive for contacting the party or whether his imprisonment was unjust`, score: 4 },
+      { text: `The accurate courthouse details suggest she has secretly visited the prison before, making the clerk's statement evidence that the clerk is protecting someone`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A powerful noble offers your party protection if you publicly support his claim to a disputed piece of land. He says the opposing family has falsified its records and provides several documents that appear authentic. The opposing family says the noble has threatened witnesses. One witness confirms receiving a threat but admits he was already paid by the opposing family before speaking. The land has belonged to the same families for generations, but records from a fire decades ago are missing. Supporting either side could bring significant benefits or retaliation. What should your party seek before taking a public position?`,
+    text: `A merchant claims that a competitor has been poisoning his customers. He presents records showing that several customers became ill after purchasing his competitor's goods. The competitor argues that the illnesses were caused by a seasonal fever spreading through the city. A healer confirms that the symptoms match the fever but says some forms of poisoning can look similar. You discover that illness rates among customers of both merchants rose during the same week. What should you conclude?`,
     options: [
-      `A trusted authority's opinion, because a neutral legal judgment would be more reliable than competing testimony from parties who both have strong incentives to influence you.`,
-      `The oldest surviving records, because historical ownership is the central question and documents are less vulnerable to the motives and emotions affecting current witnesses.`,
-      `Information that could independently test the disputed claims, because both sides have incentives to present favorable evidence and the cost of choosing incorrectly is unusually high.`,
-      `Evidence of threats and payments, because determining which side is behaving improperly would reveal which claimant is more likely to be acting in bad faith.`
+      { text: `The competitor is probably innocent because customers of both merchants became ill, making poisoning by one merchant unlikely`, score: 2 },
+      { text: `The merchant's records prove the competitor's goods are contaminated because the illnesses occurred after those goods were purchased`, score: 1 },
+      { text: `The shared increase weakens the claim that the competitor's goods alone caused the illnesses, while leaving open the possibility that a separate subset of cases had another cause`, score: 4 },
+      { text: `The healer's uncertainty means poisoning and fever are equally likely explanations and neither can be investigated further without magical testing`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A party member proposes taking a shortcut through an abandoned mine. He says he explored part of it years ago and remembers a dry passage that exits near your destination. Another member warns that old mines often collapse. You find a recent set of footprints entering the mine but none returning. The shortcut would save two days of travel. The longer route passes through territory where bandits have recently been reported, although no attack has occurred in over a month. You must choose before nightfall. Which consideration is most important?`,
+    text: `Your party discovers that a bridge has collapsed shortly before a caravan was expected to cross it. A nearby farmer says he heard an explosion during the night. A guard says the bridge simply failed because it was old. You find no obvious explosive residue, but several support beams have fresh axe marks. The farmer has been feuding with the caravan owner for years. What should receive the greatest attention?`,
     options: [
-      `The footprints inside the mine, because they show recent activity and therefore make the shortcut more likely to be navigable despite its age.`,
-      `The absence of recent bandit attacks, because the longer route has a known threat that appears to have diminished while the mine's hazards are mostly hypothetical.`,
-      `The party member's previous experience, because someone who has personally navigated the mine has more relevant knowledge than general warnings about abandoned tunnels.`,
-      `The reversibility of the choices, because entering an unstable mine may create a situation that cannot be safely exited, while delaying or rerouting remains easier to reconsider.`
+      { text: `The farmer's testimony should be discounted because his longstanding feud gives him a motive to blame someone else for the bridge's collapse`, score: 2 },
+      { text: `The axe marks are the strongest evidence because they provide direct physical evidence that someone recently interfered with the bridge structure`, score: 4 },
+      { text: `The absence of explosive residue makes the farmer's account unlikely, so the bridge probably failed naturally despite the axe marks`, score: 1 },
+      { text: `The guard's explanation is most credible because old bridges commonly fail and there is no proof that the damage occurred immediately before the collapse`, score: 1 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A merchant accuses a rival of spreading false rumors about his business. The merchant presents several customers who say they heard the same rumor. The rival denies spreading it but admits telling one customer that the merchant had "questions to answer." You investigate and discover that the rumor began before the rival made that statement. However, the rival's wording may have helped it spread. The merchant wants you to publicly clear his name. What conclusion is best supported?`,
+    text: `A healer tells your party that a certain herb improves recovery from wounds. She cites twenty successful patients. A skeptical scholar says the herb is useless because wounds usually heal naturally. You discover that the healer gives the herb only to patients who are already recovering well enough to drink a tonic, while severely injured patients receive standard treatment alone. The healer sincerely believes she has seen a benefit. What is the key problem?`,
     options: [
-      `The rival probably started the rumor because his hostile statement demonstrates that he had a motive to damage the merchant's reputation.`,
-      `The rival did not start the rumor because it existed before his statement, so any later contribution to spreading it is a separate and less important issue.`,
-      `The rival may have contributed to the rumor's spread without being its originator, so responsibility for creating the claim and responsibility for amplifying it should be distinguished.`,
-      `The customers' consistent reports establish that the rumor is widespread enough to require a public response regardless of who originally created it.`
+      { text: `The healer's personal sincerity does not matter because anyone claiming medical effectiveness without formal training should be assumed unreliable`, score: 1 },
+      { text: `The scholar is correct because natural healing explains recovery in wounded patients and therefore leaves no room for a useful medicinal effect`, score: 1 },
+      { text: `The patients were not selected in a way that separates the herb's effect from differences in their initial condition, so the observations cannot establish that the herb caused better recovery`, score: 4 },
+      { text: `The herb probably works because twenty successful cases represent a substantial number of observations, especially when the healer has no obvious reason to lie`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A healer tells you that a companion's recurring headaches are caused by a magical curse. Another healer says they are caused by exhaustion. The first healer detects a faint magical residue but admits that ordinary enchanted objects can produce similar traces. The second healer notes that the companion has slept poorly for several weeks. The headaches disappear for two days after the companion rests, then return after a difficult journey. The first healer says this proves the curse temporarily weakened. What should most increase or decrease confidence in the curse explanation?`,
+    text: `A town begins offering rewards for information about thieves. Within a month, the number of reported thefts rises sharply. The mayor announces that the reward program has uncovered a major crime problem. A merchant says the town has actually become less safe. The watch captain points out that many new reports concern thefts that occurred months earlier. What is the most careful interpretation?`,
     options: [
-      `The magical residue should substantially increase confidence because it provides physical evidence that an enchantment exists near the companion.`,
-      `The improvement after rest should decrease confidence because it provides a simpler explanation that predicts the observed change without requiring a curse.`,
-      `The first healer's admission that ordinary objects can produce the same residue should make the magical evidence irrelevant to the diagnosis.`,
-      `The recurrence after travel should increase confidence because ordinary fatigue should not produce symptoms that disappear and return so consistently.`
+      { text: `The mayor is correct because a large increase in theft reports indicates that many more thefts are occurring than before the reward program`, score: 1 },
+      { text: `The merchant is correct because a rise in reported thefts is evidence that criminal activity has increased even if some reports concern older incidents`, score: 1 },
+      { text: `The reward program changed reporting incentives, so the increase in reports cannot automatically be interpreted as an equivalent increase in the number of thefts occurring`, score: 4 },
+      { text: `The watch captain is probably minimizing the problem because emphasizing old thefts provides an easy way to make current crime statistics appear better`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A captain asks your party to escort prisoners through a town. He says one prisoner is especially dangerous and should remain chained separately. The prisoner appears calm and cooperative. Another prisoner says the captain has singled him out because they argued earlier. The captain's written report says the prisoner attacked two guards, but the guards involved are not available for questioning. You notice the prisoner has an old scar on his wrist consistent with restraints but no obvious recent injuries. What should you avoid doing?`,
+    text: `A stranger joins your party and quickly proves useful. He knows several obscure roads, notices traps before anyone else, and never asks for a share of minor loot. One night he warns everyone not to enter a particular room because he "has a bad feeling." Inside the room, you later find evidence of a hidden ambush. Another party member begins to suspect the stranger is secretly working for the dungeon's owner because his knowledge is too accurate. What is the best assessment?`,
     options: [
-      `Avoid assuming the prisoner's calm behavior proves the captain's warning is false, because demeanor alone provides weak evidence about what someone has previously done.`,
-      `Avoid treating the captain's written report as conclusive, because it records an allegation from interested parties rather than independently establishing what happened.`,
-      `Avoid separating the prisoner from the others, because isolation itself may create unnecessary tension and the prisoner has not demonstrated dangerous behavior in your presence.`,
-      `Avoid allowing the other prisoners' account to determine the issue, because they may have reasons to protect one another or undermine the captain.`
+      { text: `His unusual knowledge is evidence that he is probably connected to the dungeon's owner, especially because he predicted the ambush without explaining how`, score: 1 },
+      { text: `His repeated helpful behavior strongly establishes that he is trustworthy, so suspicions about his background should be dismissed unless he directly betrays the party`, score: 2 },
+      { text: `His behavior provides evidence of useful knowledge but does not determine its source or loyalty, so his information can be evaluated separately from assumptions about his motives`, score: 4 },
+      { text: `The hidden ambush proves his warning was genuine and therefore establishes that his previous claims about the dungeon should also be trusted`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A village has begun refusing entry to travelers after several thefts. The mayor says outsiders are responsible because all reported suspects were unknown to the village. A traveler says the policy is discriminatory and points out that the thefts occurred mostly at night when local guards were understaffed. You examine the reports and discover that two suspects were indeed outsiders, while three reports contain no suspect description at all. The mayor argues that outsiders are therefore the most likely cause. What is the strongest criticism of that reasoning?`,
+    text: `A village blacksmith is accused of selling weapons to bandits. The accusation comes from a captured bandit who says the blacksmith supplied every blade. The blacksmith admits selling ordinary tools to travelers but denies selling weapons. You inspect his forge and find several unfinished blades hidden beneath a workbench. He says they are experimental designs he never completed. The village elder says the blacksmith has always been honest. What is the strongest conclusion?`,
     options: [
-      `The mayor is relying on incomplete information because identifying some outsiders among the suspects does not establish that outsiders caused the thefts with greater frequency than local residents.`,
-      `The traveler's criticism is stronger because the guards' staffing problems provide a concrete alternative explanation for the thefts that does not depend on assumptions about outsiders.`,
-      `The mayor's policy is probably motivated by fear because blaming outsiders is a common response when communities experience unexplained crime.`,
-      `The reports should be disregarded because the lack of descriptions in several cases means none of the remaining reports can reliably identify suspects.`
+      { text: `The hidden blades prove the bandit's story because unfinished weapons in the forge demonstrate that the blacksmith was secretly producing arms`, score: 1 },
+      { text: `The elder's confidence should carry substantial weight because longstanding familiarity with the blacksmith provides a stronger basis for judging his character than a captured criminal's accusation`, score: 2 },
+      { text: `The hidden blades make the accusation more credible but do not establish that they were sold to bandits, so the connection between production and alleged supply still requires evidence`, score: 4 },
+      { text: `The bandit's status as a captured criminal makes his accusation too unreliable to consider, especially when the blacksmith has a respected reputation in the village`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A wizard offers to predict whether your expedition will succeed. He asks for a substantial payment and performs a ritual that produces an impressive vision of your party standing outside a ruined fortress. He says the vision proves you will reach the fortress but warns that the final outcome depends on your choices. A skeptical companion says the vision is meaningless theater. Another companion argues that the wizard would not charge so much unless he had genuine ability. The wizard has a reputation for accurate predictions, but you cannot independently verify how often he has been wrong. How should you evaluate the prediction?`,
+    text: `A courier arrives carrying a royal seal and says an emergency order requires your party to leave town immediately. The seal appears genuine. The courier knows several details about the royal court and becomes impatient when questioned. You later discover that the kingdom recently changed its official seal design, but the courier's seal matches the older version. The courier says the change has not yet reached every office. What should you do?`,
     options: [
-      `The wizard's reputation and demonstrated ritual should increase confidence somewhat, but without knowing the rate of failed predictions the vision provides little basis for estimating its reliability.`,
-      `The prediction should be ignored because supernatural forecasting cannot be independently verified and therefore cannot contribute meaningfully to a rational decision.`,
-      `The payment should increase confidence because people generally would not risk their reputation and livelihood by charging heavily for a service that consistently fails.`,
-      `The vision should be treated as useful evidence because the wizard's reputation provides an established track record even if the exact number of failed predictions is unavailable.`
+      { text: `Trust the courier because the seal is genuine enough to demonstrate official authorization, while minor administrative changes often take time to reach remote offices`, score: 2 },
+      { text: `Reject the order immediately because using an outdated seal proves the courier is an impostor attempting to exploit your party's loyalty to the crown`, score: 1 },
+      { text: `Treat the outdated seal as a meaningful authentication problem and seek independent confirmation of the order before acting, rather than assuming either explanation is true`, score: 4 },
+      { text: `Trust the courier's knowledge of court details because an impostor would be unlikely to know obscure information about royal officials and procedures`, score: 2 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `Your party finds a wounded enemy soldier after a battle. He says his unit has retreated and that the road ahead is safe. He is carrying a map that marks several defensive positions, but he claims those positions have been abandoned. A party member wants to trust him because he is badly wounded. Another says the map proves he is still trying to mislead you. You have no way to verify the map immediately. The road is the fastest route to your destination. What should guide your decision?`,
+    text: `A farmer reports that someone has been entering his fields at night. He finds footprints near a damaged fence and says they belong to a neighboring family. The neighboring family denies it and points out that the footprints are much larger than any of their boots. You discover that the farmer recently lost a property dispute with them. The footprints are later found to match the boots of a traveling mercenary who has been camping nearby. What should you conclude?`,
     options: [
-      `His physical condition should increase confidence because someone who is badly wounded has less practical reason to maintain a military deception.`,
-      `The map should be treated as evidence that the road may still be defended, but neither the map nor his statement should be treated as conclusive without considering how each could be misleading.`,
-      `His statement should be rejected because enemy soldiers have an obvious reason to deceive you even when their personal circumstances make deception difficult.`,
-      `The road should be avoided because any information supplied by an enemy during wartime is too compromised to justify acting on it.`
+      { text: `The farmer probably fabricated the accusation because his property dispute provides an obvious reason to blame the neighboring family for a minor trespass`, score: 2 },
+      { text: `The neighboring family is probably innocent because the footprints do not match their boots, which removes the strongest physical evidence against them`, score: 2 },
+      { text: `The physical evidence weakens the accusation against the neighbors, while the farmer's prior dispute remains relevant to why he identified them despite contradictory evidence`, score: 4 },
+      { text: `The mercenary is probably responsible for the damaged fence because matching footprints establish that the mercenary entered the field and therefore caused the damage`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A young adventurer repeatedly volunteers to negotiate with strangers because he believes he is particularly good at reading people. Several negotiations have gone well. In one recent case, however, he accepted a contract with unusually vague terms because the other party "felt trustworthy." The contract later caused the party financial losses. He argues that the outcome was unlucky and that refusing the contract would have lost an important opportunity. Another companion says this proves he cannot judge character at all. What is the most useful lesson?`,
+    text: `A council is deciding whether to evacuate a town because a seer predicts a dragon attack within three days. The seer has correctly predicted several weather events but has never predicted an attack. A scout reports finding unusually large tracks in the mountains. Another scout reports finding no dragon tracks near the town. The town has limited food and evacuating would impose substantial costs. What is the most rational approach?`,
     options: [
-      `His previous successful negotiations should still carry significant weight because one bad outcome does not invalidate a demonstrated ability to establish rapport with strangers.`,
-      `The failed contract shows that intuitive judgments about people are unreliable, so important negotiations should always be handled through written safeguards instead of personal impressions.`,
-      `The problem was less likely his ability to read people than his decision to let that impression substitute for examining the contract's concrete risks and ambiguities.`,
-      `The other companion's criticism is exaggerated because the contract's outcome depended on external circumstances that cannot fairly be attributed to the adventurer's judgment.`
+      { text: `Evacuate immediately because the seer's previous accurate predictions and the mountain tracks together make the dragon threat too serious to ignore`, score: 2 },
+      { text: `Stay because the seer has never successfully predicted an attack and evacuation would impose real costs based on evidence that remains uncertain`, score: 2 },
+      { text: `Treat the dragon threat as uncertain and weigh the probability and consequences of an attack against the costs of evacuation, rather than treating either prediction or uncertainty as decisive`, score: 4 },
+      { text: `Wait until a dragon is directly observed because acting before confirming the threat risks imposing unnecessary hardship on the entire town`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A town's grain stores are running low. The steward proposes rationing immediately. A merchant says a large shipment will arrive in three days and claims rationing would cause unnecessary panic. The steward says the merchant is trying to protect his investment because he has already paid for the shipment. Records show that the shipment left its origin, but the road has recently been damaged by floods. The town has enough grain for four days at normal consumption. Rationing would extend supplies for a week but could cause unrest. What should the town consider first?`,
+    text: `A party member begins missing meetings and giving vague explanations. Another member says this proves they are planning to betray the group. You discover that the absent member has quietly sold several valuable possessions but has also been visiting a healer outside town. When confronted, they become defensive and refuse to explain. A friend says the healer is treating someone in their family. What is the most reasonable interpretation?`,
     options: [
-      `Whether the merchant's financial interest makes his estimate unreliable, because the town should not base a critical food decision on information supplied by someone who benefits from normal consumption.`,
-      `Whether the shipment's expected arrival is reliable enough to justify waiting, because the decision should depend on the probability and consequence of the shipment being delayed rather than on either person's motives.`,
-      `Whether rationing would cause unrest, because social instability could create greater harm than temporarily exhausting the grain reserves.`,
-      `Whether the steward has previously handled shortages successfully, because an experienced official is more likely to understand the practical consequences of rationing than a merchant.`
+      { text: `The member is probably preparing to betray the party because selling possessions, avoiding meetings, and refusing to explain form a coherent pattern of secretive behavior`, score: 1 },
+      { text: `The healer visit provides a likely innocent explanation, so the party should stop worrying unless direct evidence of betrayal appears`, score: 2 },
+      { text: `The behavior indicates that something significant is being concealed, but the available evidence does not establish whether the reason is betrayal, financial trouble, family circumstances, or another private matter`, score: 4 },
+      { text: `The defensive reaction is the strongest evidence because innocent people generally explain themselves when questioned by trusted companions`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A party member discovers that another companion has been secretly meeting a stranger outside camp. The meetings occur after dark and stop whenever anyone approaches. The companion says the stranger is a source of information but refuses to explain further. Another party member wants to confront them immediately. A third argues that secrecy itself is proof of betrayal. You later learn that the stranger has been providing information about a threat to the party, but you do not yet know why the companion kept it secret. What should your response prioritize?`,
+    text: `A merchant offers your party a shortcut through private land. He says the route is safe and that the landowner has granted permission. The shortcut would save an entire day. At the entrance, you find a locked gate and a sign warning travelers not to enter. The merchant says the sign is outdated and that he has used the path many times. A local shepherd confirms that the path is sometimes opened for caravans but says the owner recently changed the rules. What should you do with the conflicting information?`,
     options: [
-      `The fact that the information concerns a genuine threat should excuse the secrecy because the companion's intentions were ultimately beneficial to the party.`,
-      `The secrecy should remain a concern because even useful information can create risks when one person controls an undisclosed relationship that affects the group's safety.`,
-      `The companion should be confronted publicly because hidden relationships undermine trust even when the immediate information turns out to be accurate.`,
-      `The stranger's usefulness should be investigated before judging the secrecy, because a source who provides valuable intelligence may justify keeping the relationship confidential.`
+      { text: `Trust the merchant because repeated personal use of the route provides stronger evidence than a sign that may simply have become outdated`, score: 2 },
+      { text: `Trust the warning sign because written restrictions should always take precedence over verbal claims about private property`, score: 2 },
+      { text: `Recognize that the merchant's historical experience may be genuine while the current restriction has changed, making present authorization the unresolved issue that should be verified`, score: 4 },
+      { text: `Trust the shepherd because local residents are more likely than outsiders to know the landowner's intentions and therefore the shortcut is probably closed`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A village healer asks your party to stop a mob from attacking a suspected witch. The suspected woman lives alone and has been seen performing strange rituals near the graves of several villagers. Three families claim their relatives became sick after arguing with her. The healer says the woman is actually conducting harmless mourning rites. You discover that the woman's rituals began only after the deaths, not before them. One sick villager recovered after leaving the area. Another died. What should most strongly affect your next action?`,
+    text: `A prisoner offers your party information about an upcoming attack. He gives the exact date, location, and number of soldiers involved. The captain says the prisoner is probably trying to cause panic so the town will divert troops away from the prison. You discover that the date and location match information from an independent intercepted message, but the troop count differs. The prisoner insists his number is correct. What is the strongest conclusion?`,
     options: [
-      `The number of families making accusations should justify immediate protection of the village because several independent reports suggest the woman poses a real threat.`,
-      `The harmless explanation should be accepted because the rituals began after the deaths, making it unlikely that she caused the original illnesses.`,
-      `The immediate risk of mob violence should be separated from the unresolved cause of the illnesses, since protecting the woman from an unjust attack does not require deciding whether she is innocent.`,
-      `The recovery of one villager after leaving the area should increase suspicion of the woman because it provides evidence connecting proximity to her with illness.`
+      { text: `The prisoner is trustworthy because his date and location match the intercepted message, so the conflicting troop count is probably a minor error`, score: 2 },
+      { text: `The captain is correct because prisoners have obvious incentives to manipulate authorities and therefore their information should be treated as deliberately misleading`, score: 1 },
+      { text: `The independent agreement increases confidence that an attack is being planned, while the disagreement about troop numbers means the scale of the threat remains uncertain`, score: 4 },
+      { text: `The intercepted message should be ignored because intelligence about military movements is often deliberately falsified and therefore cannot independently confirm the prisoner's account`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A commander tells your party that an enemy army is exhausted and recommends attacking before dawn. A scout reports seeing large numbers of enemy soldiers resting, while another reports that supply wagons have been moving steadily throughout the night. The commander says the wagons are probably carrying wounded soldiers away. The enemy's campfires are fewer than usual. Your own troops are tired from a long march. If you attack now, you may catch the enemy unprepared, but a failed attack could leave your force exposed. What is the most important uncertainty?`,
+    text: `A town hires your party to determine why a series of fires began after a new bakery opened. Several fires occurred near the bakery, and the owner admits his ovens sometimes run hot. A rival baker says the new shop is careless. The fire marshal finds that the bakery's equipment meets safety standards. You later discover that several fires began in abandoned buildings with no connection to either bakery, but all occurred during a period of unusually dry weather. What should change in your assessment?`,
     options: [
-      `Whether the enemy is actually exhausted enough that the potential surprise advantage outweighs the disadvantage of committing your own tired troops to combat.`,
-      `Whether the supply wagons are carrying wounded soldiers, because determining their purpose would reveal whether the enemy is retreating or preparing for another movement.`,
-      `Whether the reduced campfires indicate fewer soldiers, because the size of the enemy force is the most important factor in determining whether an attack can succeed.`,
-      `Whether the commander has reliable intelligence, because a mistaken interpretation from leadership could expose the entire force to an avoidable defeat.`
+      { text: `The bakery remains the strongest explanation because the timing of the fires after its opening provides a concrete connection that the dry weather does not explain`, score: 2 },
+      { text: `The rival baker's accusation becomes more credible because the bakery owner admitted that his ovens sometimes operate at unusually high temperatures`, score: 1 },
+      { text: `The broader pattern weakens the bakery-specific explanation and increases support for an environmental factor affecting multiple locations, without completely ruling out individual accidental fires`, score: 4 },
+      { text: `The fire marshal's inspection proves the bakery cannot have caused any fires because equipment that meets safety standards cannot produce dangerous conditions`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A farmer offers your party a rare medicinal herb and says it grows naturally on his land. A botanist traveling with you says the herb normally grows several days north of the region. The farmer explains that birds may have carried the seeds. You find several plants growing near a recently built irrigation channel. The farmer has no obvious reason to lie, but the herb is worth a great deal in the nearest city. He offers to sell you the entire harvest at a price far below the city rate. What should you investigate before deciding whether the offer is legitimate?`,
+    text: `A famous adventurer recommends a particular route through a dungeon and says it is safer than the alternatives. Your party follows it and avoids two traps. Later, you discover that the route also passes directly through an area controlled by a rival faction. The adventurer says he forgot about the faction because he has not visited the dungeon recently. A local guide says the rival faction has controlled that area for months. What should you make of the recommendation?`,
     options: [
-      `Whether the farmer has an incentive to underprice the herbs because he may be unaware of their value or may need money quickly for another reason.`,
-      `Whether the irrigation system could have altered local growing conditions, because establishing a plausible mechanism for the plants' presence is more useful than relying on assumptions about the farmer's honesty.`,
-      `Whether birds in the region are capable of carrying the herb's seeds, because the farmer's explanation should be verified before treating the plants as naturally occurring.`,
-      `Whether the herbs are genuine, because the unusual location and low price create a substantial possibility that the farmer has substituted a similar-looking plant.`
+      { text: `The recommendation remains trustworthy because successfully avoiding two traps demonstrates that the adventurer knew the dungeon well enough to identify a genuinely safe route`, score: 2 },
+      { text: `The recommendation should be rejected because directing your party toward a rival-controlled area proves the adventurer intentionally sent you there`, score: 1 },
+      { text: `The route information may have been accurate when the adventurer learned it, but conditions changed, illustrating that correct historical knowledge does not guarantee current safety`, score: 4 },
+      { text: `The local guide should be trusted completely because living near the dungeon gives them more relevant knowledge than a famous adventurer who has not visited recently`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A respected captain tells your party that a particular road is safe because he has traveled it dozens of times. A younger scout says the road has changed because recent flooding exposed old ruins and created several new paths. The captain dismisses the scout as inexperienced. You inspect the map and discover it is more than a year old. The captain's experience is genuine, but none of his recent journeys occurred after the flooding. The scout has only traveled the road once since then. What should receive the most weight?`,
+    text: `A council member proposes building a wall around the town after several monster sightings. He cites six reports from residents and says the wall will protect everyone. Another council member argues that the sightings are exaggerated because none resulted in an attack. You discover that all six reports came from houses near the same forest edge, and two witnesses later admit they may have seen the same creature. The remaining reports occurred on different nights. What is the most important observation?`,
     options: [
-      `The captain's greater experience, because repeated successful travel provides a stronger overall basis for judging the road than one recent observation.`,
-      `The scout's recent observation, because information about changed conditions is more relevant than a larger history of experiences under different conditions.`,
-      `Neither person's testimony, because the map is outdated and the conflicting accounts mean the road cannot currently be evaluated with sufficient confidence.`,
-      `The flooding itself, because once a road has undergone major environmental changes, previous experience becomes largely irrelevant to deciding whether it remains safe.`
+      { text: `The six reports provide substantial evidence of multiple monsters because they came from different residents and occurred over several nights`, score: 1 },
+      { text: `The absence of attacks is the strongest evidence that the sightings do not represent a meaningful threat and therefore do not justify defensive action`, score: 2 },
+      { text: `The reports should not automatically be counted as six independent sightings because some may describe the same event or creature, which changes how much evidence they provide`, score: 4 },
+      { text: `The council member supporting the wall is probably exaggerating because political leaders commonly use isolated frightening reports to justify expensive construction projects`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A noble offers your party a large reward to retrieve a prisoner from a remote fortress. He says the prisoner is a dangerous traitor who stole military secrets. A former guard says the prisoner is actually a political dissident who learned something embarrassing about the noble. The guard provides a letter that appears to support this claim. The noble provides an official warrant naming the prisoner a traitor. Both documents could be forged. The prisoner is scheduled to be executed in two days. What is the most responsible immediate goal?`,
+    text: `A scholar claims that an ancient artifact grants visions of the future. She demonstrates by predicting that a candle will go out within the hour, and it does. A skeptical scholar says the demonstration means little because candles frequently extinguish. The first scholar then predicts that a particular messenger will arrive before sunset. The messenger arrives. You later discover that the scholar had been secretly communicating with the messenger earlier that day. What should you infer?`,
     options: [
-      `Determine whether the noble's warrant is authentic because official documentation is the strongest available indication of the prisoner's legal status.`,
-      `Determine what information the prisoner possesses, because learning the substance of the alleged secrets may reveal whether either side has a plausible motive for manipulating your party.`,
-      `Determine whether the former guard is trustworthy, because the entire alternative account currently depends on testimony from someone with an unknown relationship to the prisoner.`,
-      `Establish enough independent evidence to distinguish a genuine security threat from a political dispute before helping either side take irreversible action.`
+      { text: `The predictions demonstrate supernatural ability because correctly predicting two unrelated events is unlikely to happen by chance`, score: 1 },
+      { text: `The second prediction is strong evidence of magical ability because secretly knowing about the messenger would not explain the exact timing of the arrival`, score: 1 },
+      { text: `The evidence for supernatural prediction is weakened because at least one apparently impressive prediction had an ordinary information source, while the candle prediction was already weak evidence`, score: 4 },
+      { text: `The skeptical scholar is proven correct because discovering one ordinary explanation means all demonstrations involving the artifact must have been fabricated`, score: 1 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A party member becomes unusually withdrawn after receiving a letter. Another companion says the letter must contain bad news because the person has stopped joking and has begun volunteering for dangerous tasks. The withdrawn member insists everything is fine. You later learn that the letter concerned a debt owed by their family. They have not asked anyone for help and appear embarrassed when the subject comes up. What is the wisest response?`,
+    text: `A commander asks your party to investigate reports that his soldiers are stealing from civilians. Several villagers accuse the same patrol. The patrol leader denies it and says the villagers are angry because the soldiers confiscated food during an emergency. The confiscations are documented and authorized. One villager produces a purse allegedly taken by a soldier, but another villager says the purse was actually found abandoned. You discover that the patrol's inventory records contain unexplained shortages. What is the most careful conclusion?`,
     options: [
-      `Respect their claim that everything is fine because pressing someone about private family problems can create unnecessary shame and damage trust.`,
-      `Offer practical help without demanding disclosure, because the observed behavior suggests a real problem while the exact nature of that problem remains their information to share.`,
-      `Confront them about the dangerous behavior because volunteering for unnecessary risks indicates that their private problem is beginning to endanger the entire party.`,
-      `Ask another companion to investigate the debt privately, because understanding the financial problem would allow the party to intervene without forcing the person to admit it.`
+      { text: `The soldiers are probably guilty because repeated accusations combined with unexplained inventory shortages create a consistent pattern of misconduct`, score: 2 },
+      { text: `The villagers are probably exaggerating because the documented emergency confiscations provide a legitimate explanation for their hostility toward the patrol`, score: 2 },
+      { text: `There is enough evidence to investigate the patrol's accounting and individual transactions, but not enough to treat every accusation as established simply because the overall pattern is suspicious`, score: 4 },
+      { text: `The purse should be treated as decisive evidence because possession of an item allegedly taken from a villager directly connects the soldiers to theft`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A town guard tells you that a particular alley is dangerous after dark. He recommends taking a longer route. A local shopkeeper says the guard exaggerates because he wants travelers to pass his brother's business on the alternate road. You find that the alley has had three robberies this month, while the alternate road has had none. The guard's brother does own a shop on the alternate road. The robberies occurred on nights when the street lamps were broken. The lamps have since been repaired. What should most affect your choice?`,
+    text: `A healer asks your party to retrieve a rare flower from a dangerous cliff. She says the flower is needed to save a patient's life. She provides the exact location and warns that the flower blooms only briefly. When you reach the cliff, you find several flowers matching her description. A local herbalist tells you that the plant has no medicinal value but is extremely valuable to alchemists. The healer becomes evasive when asked who the patient is. What is the most appropriate interpretation?`,
     options: [
-      `The guard's financial connection should make his recommendation suspect because he benefits directly from travelers using the alternate road.`,
-      `The robbery history should favor avoiding the alley because repeated incidents provide stronger evidence of danger than the guard's possible financial incentive provides evidence of deception.`,
-      `The repaired lamps should favor the alley because the conditions associated with the previous robberies have changed, reducing the relevance of historical incidents.`,
-      `The shopkeeper's claim should be discounted because the guard's brother's business gives the shopkeeper a competing commercial interest in directing travelers elsewhere.`
+      { text: `The healer is probably lying because refusing to identify the patient while seeking an extremely valuable plant suggests she intends to sell it rather than use it medically`, score: 2 },
+      { text: `The local herbalist is probably correct because local knowledge of plants should outweigh a healer's claim when the two disagree about medicinal properties`, score: 1 },
+      { text: `The healer's stated purpose is uncertain, but the flower's alternative value creates a plausible competing motive that should be investigated before risking the party`, score: 4 },
+      { text: `The patient's identity should be irrelevant because a healer asking for a specific medicine is entitled to privacy and the existence of another use does not make the request suspicious`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A scholar asks you to destroy a collection of books because she says they contain dangerous magical instructions. Another scholar says destroying them would erase valuable historical knowledge. You inspect the collection and find that most books are ordinary histories, while three contain obscure rituals. One ritual appears to describe a way to summon something dangerous, but the instructions are incomplete. The first scholar refuses to explain exactly what she fears. The second wants the collection preserved unchanged. What should be considered first?`,
+    text: `A town's oldest resident tells your party that a particular cave has always been avoided because people who enter rarely return. He remembers several disappearances from his childhood. A young miner says the cave is simply dangerous because its lower tunnels flood unpredictably. The old resident dismisses this as a modern explanation and says the cave is cursed. You discover that the disappearances all occurred during the rainy season and that the cave contains evidence of sudden flooding. What is the strongest interpretation?`,
     options: [
-      `Whether the dangerous rituals can be securely isolated or contained, because destroying an entire collection may be unnecessary if the specific risk can be managed.`,
-      `Whether the first scholar has previously encountered the magic described, because practical expertise would make her warning more credible than the second scholar's general concern for historical preservation.`,
-      `Whether the incomplete ritual could actually function, because destroying material that cannot be used would impose an unnecessary loss of knowledge.`,
-      `Whether the collection has unique historical value, because preservation should normally be preferred when the danger is uncertain and the materials are not currently being used.`
+      { text: `The curse remains plausible because generations of villagers independently preserved the warning long before anyone understood the cave's flooding behavior`, score: 1 },
+      { text: `The miner's explanation is probably correct because physical evidence of flooding provides a direct mechanism that can account for people disappearing`, score: 3 },
+      { text: `The historical warning may accurately preserve a real danger even if its supernatural explanation is wrong, making the distinction between observation and interpretation important`, score: 4 },
+      { text: `The old resident should be trusted because personal memories from the period before modern mining began are more reliable than explanations developed afterward`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A village elder asks your party to decide whether a bridge should remain open. The bridge is old and has visible cracks. A builder says it is unsafe and recommends immediate closure. Another builder says the cracks are superficial and the bridge could last for years. Both have inspected it. The bridge is the only route to a hospital for several nearby villages. Closing it would require a three-day detour. You cannot obtain a third expert until tomorrow. Heavy rain is expected tonight. What should guide the decision?`,
+    text: `A guildmaster tells your party that a rival guild is sabotaging his shipments. He presents three damaged wagons and says all were attacked on the same road. A rival representative says the wagons were poorly maintained. You inspect the damage and find that all three wheels failed at nearly identical points, while the road itself is smooth. The guildmaster insists this proves sabotage. A mechanic says identical failures can also occur when the same faulty component is installed repeatedly. What is the most useful next step?`,
     options: [
-      `Close the bridge because the potential consequences of structural failure are severe enough that uncertainty should favor preventing use until further inspection.`,
-      `Keep the bridge open because the hospital route provides an important public benefit and one builder has judged the visible damage noncritical.`,
-      `Restrict the bridge to light traffic until another inspection is possible, balancing the medical necessity against the possibility that heavy loads increase the structural risk.`,
-      `Follow the builder with the stronger credentials, because technical disagreements should ultimately be resolved by giving greater weight to the more qualified professional.`
+      { text: `Accept the guildmaster's explanation because repeated identical failures in the same place are unlikely to happen naturally and therefore indicate deliberate interference`, score: 2 },
+      { text: `Accept the rival's explanation because faulty maintenance is a common cause of mechanical failures and requires less intentional coordination than sabotage`, score: 2 },
+      { text: `Examine the failed components and maintenance records to distinguish a shared mechanical defect from deliberate damage rather than deciding based on which explanation sounds more plausible`, score: 4 },
+      { text: `Assume the guildmaster is framing the rival because accusing a competitor of sabotage gives the guildmaster a clear strategic advantage in future trade negotiations`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A companion proposes buying information from a thief who claims to know where a missing noble is being held. The thief asks for a large payment and says the information must remain secret. He provides one detail that the party independently confirms: the noble's guards were recently moved from the western district. However, the thief refuses to identify his source. Another contact says the thief has sold false information before. The noble's location is becoming more urgent because an execution may occur soon. What should most influence whether you pay?`,
+    text: `A messenger tells your party that a bridge ahead has been destroyed and advises taking a longer road. He appears exhausted and says he came directly from the bridge. Another traveler arrives shortly afterward and says the bridge is intact because she crossed it that morning. The messenger explains that the bridge may have been destroyed after she crossed. You learn that a heavy storm passed through the area between their journeys. What is the most reasonable response?`,
     options: [
-      `The independently confirmed detail should substantially increase confidence because it demonstrates that the thief possesses at least some genuine information about the situation.`,
-      `The thief's history of selling false information should outweigh the confirmed detail because a known pattern of deception makes any additional claim unsafe to rely upon.`,
-      `The urgency of the situation should justify paying despite uncertainty because the cost of missing a genuine opportunity may be greater than the cost of losing the payment.`,
-      `The most important question is whether the payment can be structured so that the thief bears some cost for false information rather than receiving the full reward regardless of accuracy.`
+      { text: `Trust the messenger because he claims to have seen the bridge more recently, making his account more relevant than the earlier crossing`, score: 2 },
+      { text: `Trust the traveler because direct successful passage demonstrates that the bridge was functioning and there is no direct evidence that the storm damaged it`, score: 2 },
+      { text: `Treat the messenger's report as more current but not automatically certain, and verify the bridge condition if the cost of taking the longer route is significant`, score: 4 },
+      { text: `Assume the messenger is trying to redirect travelers for personal gain because exhausted travelers giving vague warnings are commonly attempting to manipulate routes`, score: 1 },
     ],
-    correctIndex: 3,
   },
 
   {
-    text: `A soldier tells your party that his commander is secretly selling military supplies. He provides dates and locations where supplies allegedly disappeared. The commander denies it and says the soldier is angry because he was denied promotion. Records confirm that supplies did disappear on two of the dates, but no records identify where they went. The soldier was present during both incidents. The commander has authority over the records. A second soldier says the accused commander is known for being strict but has never personally seen him steal. What should you conclude?`,
+    text: `A noble asks your party to investigate a servant accused of stealing jewelry. The servant's room contains one missing necklace hidden beneath a floorboard. The servant says someone planted it there. The noble says the servant had access to the jewelry cabinet and has recently been struggling financially. Another servant says the accused often complained about being underpaid. You later discover that the accused's room is cleaned every morning by three other servants. What should happen to your confidence?`,
     options: [
-      `The soldier's accusation is credible because his specific details were independently supported by missing supplies on the dates he identified.`,
-      `The commander remains more likely innocent because the soldier has an obvious motive for retaliation and no direct evidence proves that the commander personally took anything.`,
-      `The missing supplies make the accusation worth investigating, but they do not yet distinguish between the commander's alleged theft, another form of loss, or the soldier's own involvement.`,
-      `The commander should be temporarily removed because his control over the records creates a conflict that prevents a fair investigation while he remains in charge.`
+      { text: `The hidden necklace makes the servant's guilt highly likely because possessing stolen property in a private room is strong evidence of deliberate theft`, score: 2 },
+      { text: `The servant's financial problems and complaints about pay provide a clear motive, making the discovery of the necklace even more persuasive`, score: 1 },
+      { text: `The necklace is important evidence, but the shared access to the room creates an alternative means of placing it there, so the physical discovery does not independently establish who hid it`, score: 4 },
+      { text: `The servant is probably innocent because a thief would not hide stolen jewelry somewhere that could be discovered during routine cleaning`, score: 2 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A party member insists that another adventurer is lying about having been attacked on the road. The story sounds exaggerated, but the injured adventurer has wounds consistent with a fight. A broken wagon is found nearby. The accused party member points out that there are no bodies and no stolen goods. The injured adventurer says the attackers fled when they heard another caravan approaching. A passing merchant confirms seeing a damaged wagon but did not witness the attack. What is the most reasonable conclusion?`,
+    text: `A group of farmers says a new road has caused monsters to move closer to their homes. They point to several sightings since construction began. The road engineer says the sightings are unrelated and notes that construction workers have been clearing forest that previously blocked the farmers' view. You discover that the number of reported sightings increased sharply, but the number of livestock attacks did not. What should you infer?`,
     options: [
-      `The attack probably occurred because physical damage and injuries provide independent evidence that something violent happened even though the exact story remains uncertain.`,
-      `The story is probably fabricated because the absence of bodies and stolen goods makes the claimed attack difficult to reconcile with the severity of the injuries.`,
-      `The merchant's confirmation proves the adventurer was attacked because an independent witness has verified the damaged wagon associated with the story.`,
-      `The accused party member is probably correct that the story is exaggerated because the lack of direct witnesses makes the injured adventurer's account inherently unreliable.`
+      { text: `The farmers are probably mistaken because unchanged livestock attacks demonstrate that monsters have not actually moved closer to the settlement`, score: 2 },
+      { text: `The engineer is probably correct because clearing the forest provides a straightforward reason that monsters would become easier to see without becoming more numerous`, score: 3 },
+      { text: `The sightings may reflect increased visibility rather than increased monster activity, but the unchanged attacks do not completely rule out a change in behavior or location`, score: 4 },
+      { text: `The road probably caused the change because the timing of the sightings after construction provides stronger evidence than the engineer's theoretical explanation about visibility`, score: 1 },
     ],
-    correctIndex: 0,
   },
 
   {
-    text: `A local official tells your party that a recent plague is caused by outsiders bringing disease into the city. He points to the timing of the outbreak, which began shortly after several caravans arrived. A healer says the first known cases actually occurred in a neighborhood with no recent travelers. Records show the outbreak spread fastest in crowded buildings with poor sanitation. The official dismisses the records as incomplete. The city is considering restricting travelers. What should most weaken the official's explanation?`,
+    text: `A respected captain tells your party that one of his officers is disloyal. He says the officer has been unusually quiet, requested access to old military maps, and recently sent money to relatives across the border. The officer explains that the money supports an elderly parent and that the maps are needed for a legitimate survey. You discover that the officer requested the maps through the normal procedure and that several other officers have done the same. What should you conclude?`,
     options: [
-      `The fact that caravans arrived shortly before the outbreak, because timing alone does not establish that travelers caused the disease rather than coinciding with its emergence.`,
-      `The healer's claim about the first cases, because identifying an earlier case in a neighborhood without travelers directly contradicts the official's proposed source.`,
-      `The pattern of faster spread in crowded, poorly sanitized buildings, because it provides an alternative mechanism that better explains differences in transmission within the city.`,
-      `The incompleteness of the official records, because incomplete evidence cannot reasonably support a policy that restricts an entire group of travelers.`
+      { text: `The captain's suspicion remains strong because the officer's behavior involves multiple unusual actions that together form a meaningful pattern`, score: 1 },
+      { text: `The officer is probably innocent because each individual action has an ordinary explanation and there is no direct evidence of communication with an enemy`, score: 3 },
+      { text: `The evidence weakens the captain's interpretation because two supposedly suspicious behaviors have ordinary explanations and the map request was not exceptional within the organization`, score: 4 },
+      { text: `The officer is probably guilty because sending money across a border while requesting military maps creates a combination that would be too coincidental to ignore`, score: 1 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A wealthy adventurer offers to fund your party's expedition in exchange for half of anything you recover. He says he wants to support promising explorers and claims the arrangement is generous because he will assume all financial risk. A previous expedition funded by him ended in a dispute over ownership of artifacts. His contract for your party contains vague language about "discoveries associated with the expedition." He says the wording can be clarified later. You have little money of your own and cannot afford the expedition without him. What should concern you most?`,
+    text: `A merchant tells your party that a rival has been spreading false rumors about his goods. He produces several customers who say the rival warned them not to buy from him. The rival admits making the warnings but says he was repeating reports that the merchant's goods were defective. You inspect several products and find that some are defective while others are not. The merchant argues that the rival's warnings are still malicious because he exaggerated the problem. What is the most defensible conclusion?`,
     options: [
-      `The previous dispute, because a repeated conflict over ownership suggests that disagreements are likely to arise again even if the current relationship begins amicably.`,
-      `The investor's wealth, because someone who can easily afford the expedition has less reason to impose restrictive terms on adventurers who provide the actual labor.`,
-      `The vague ownership language, because the central risk is not whether the patron seems generous but whether the contract allows both parties to interpret the eventual division differently.`,
-      `The lack of personal funds, because dependence on the patron means the party has little negotiating power and may be forced to accept unfavorable terms.`
+      { text: `The rival is acting maliciously because repeating concerns about defective goods when some products are safe is an unfair attempt to damage a competitor's reputation`, score: 2 },
+      { text: `The merchant is probably innocent because only some products are defective and therefore broad warnings about the goods are factually unjustified`, score: 1 },
+      { text: `There is evidence supporting a factual basis for the warnings, but whether the rival accurately characterized the frequency and severity of defects remains a separate question`, score: 4 },
+      { text: `The rival should be trusted because admitting that he issued the warnings demonstrates honesty and makes it unlikely that he invented the underlying concerns`, score: 2 },
     ],
-    correctIndex: 2,
   },
 
   {
-    text: `A watch captain tells your party that a prisoner escaped because one guard fell asleep. The guard admits falling asleep but says the prisoner had already disappeared when he woke. Another guard says the prisoner was still present when the first guard took his post. The cell door shows no damage, and the lock was opened with a proper key. The captain immediately orders the sleeping guard arrested for negligence. You discover that three people possessed keys to the cell. What should the investigation focus on first?`,
+    text: `A party discovers a sealed door beneath an abandoned temple. An inscription says, "Only those who enter without greed shall pass." One adventurer argues that the door is a magical test of character. Another says the inscription is probably meant to frighten thieves. A third notices that the door has a conventional locking mechanism hidden beneath the inscription. The party finds valuable treasure visible through a crack beside the door. What is the most useful interpretation?`,
     options: [
-      `The sleeping guard's negligence, because falling asleep created an obvious opportunity and directly contributed to the prisoner's disappearance.`,
-      `The three people with keys, because determining who could have legitimately opened the cell separates the opportunity for escape from the assumption that the sleeping guard caused it.`,
-      `The escaped prisoner's abilities, because understanding whether the prisoner could have manipulated the lock without a key may explain why there was no physical damage.`,
-      `The captain's decision to arrest the guard, because assigning blame immediately may indicate that leadership is attempting to conceal another person's involvement.`
+      { text: `The inscription should be taken literally because ancient temples commonly used moral tests to determine who was worthy to enter sacred places`, score: 1 },
+      { text: `The visible treasure is probably bait because placing valuable objects beside a warning is a classic sign of a magical trap`, score: 2 },
+      { text: `The conventional lock provides evidence that at least part of the obstacle is mechanical, while the inscription may still indicate a separate magical or social purpose`, score: 4 },
+      { text: `The inscription is probably irrelevant because the discovery of an ordinary locking mechanism demonstrates that the temple's builders did not use magic in the door`, score: 1 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A traveler asks your party for directions and says she is trying to reach a monastery before nightfall. She knows the monastery's name, describes the local road accurately, and carries a letter bearing the monastery's seal. However, she asks unusually detailed questions about how many guards are stationed at a nearby bridge. A companion suspects she is scouting the area. The traveler explains that she is transporting medicine and wants to know whether the bridge is safe. You cannot verify the letter before the monastery closes. What is the most proportionate response?`,
+    text: `A commander tells your party that a deserter stole military supplies. The deserter admits leaving his post but denies taking anything. A warehouse inventory shows several missing items. The commander says the timing is obvious proof. The deserter says the supplies were already missing when he left and claims other soldiers can confirm it. You discover that the warehouse inventory was not checked for two months before the alleged theft. What is the most important issue?`,
     options: [
-      `Refuse to provide any information because the unusual questions create enough suspicion that assisting her could expose the party or monastery to unnecessary risk.`,
-      `Provide the route but avoid sharing tactical information about guards, because helping with ordinary travel does not require revealing details that would be useful for an attack.`,
-      `Trust the letter and answer her questions because the monastery's seal provides independent evidence that she has a legitimate reason to travel there.`,
-      `Escort her personally to the monastery because doing so allows the party to protect the traveler while observing whether her story remains consistent.`
+      { text: `The deserter's admission that he abandoned his post is strong evidence against him because someone willing to desert is more likely to steal supplies as well`, score: 1 },
+      { text: `The commander's timeline should be trusted because the missing supplies were discovered after the deserter left and therefore naturally point toward him`, score: 2 },
+      { text: `The inventory gap prevents the missing supplies from being reliably attributed to the deserter, because the theft could have occurred at any point during the two-month period`, score: 4 },
+      { text: `The other soldiers should be trusted because their potential testimony provides an alternative account that directly contradicts the commander's accusation`, score: 2 },
     ],
-    correctIndex: 1,
   },
 
   {
-    text: `A village has begun holding nightly meetings because people believe someone among them is secretly working for a nearby enemy. The meetings have become increasingly accusatory. A respected elder says the traitor must be identified before the village is attacked. A young villager proposes that everyone report suspicious behavior anonymously. Another villager points out that several people have already been falsely accused after private disagreements. You learn that the enemy has not actually attacked the village or communicated with anyone inside it. What is the greatest immediate danger?`,
+    text: `A village asks your party to determine whether a nearby ruin is haunted. Residents report hearing footsteps, seeing lights, and finding objects moved overnight. A priest says the reports prove spirits are present. A skeptical ranger discovers that the ruin has several partially collapsed ventilation shafts and old mechanical devices. During your investigation, you hear footsteps but cannot see anyone. Later, you find a loose pulley connected to a partially collapsed section of the building. What should you conclude?`,
     options: [
-      `The possibility of an actual traitor, because allowing an enemy agent to remain undiscovered could eventually create consequences that are difficult to reverse.`,
-      `The lack of evidence for the suspected infiltration, because the village is escalating suspicion without first establishing that there is an enemy operation to uncover.`,
-      `The anonymous reporting system, because it could encourage people to make accusations without accepting responsibility for the consequences of being wrong.`,
-      `The elder's influence, because respected leaders can unintentionally turn ordinary disagreements into accusations when people assume their suspicions are informed by hidden knowledge.`
+      { text: `The ruin is probably haunted because multiple residents independently reported strange experiences before your party arrived`, score: 1 },
+      { text: `The ranger's mechanical explanation is probably correct because discovering one mechanism capable of producing movement makes supernatural explanations unnecessary`, score: 3 },
+      { text: `There is evidence that at least some reported phenomena could have ordinary causes, but that does not by itself establish that every unusual event has been explained`, score: 4 },
+      { text: `The priest's testimony should be preferred because religious training gives him more authority to identify supernatural activity than a ranger who specializes in physical evidence`, score: 1 },
     ],
-    correctIndex: 1,
-  },
-
-  {
-    text: `A merchant caravan refuses to hire a particular guard because several workers say he is "bad luck." They point out that two caravans he guarded were attacked and one suffered a serious wagon accident. The guard says he was the only person who survived the first attack and that the second caravan ignored his warning about a damaged wheel. Records show both attacks occurred on roads that had unusually high crime rates. The caravan master still says customers will distrust the business if the guard is hired. What should most influence your judgment of the guard?`,
-    options: [
-      `The number of incidents associated with him, because repeated association between a person and disasters is unlikely to be entirely meaningless even if a causal mechanism is unclear.`,
-      `The high-risk routes and the guard's account of the damaged wheel, because both incidents have plausible explanations that do not require the guard to cause or attract misfortune.`,
-      `The customers' perception, because a guard who damages the caravan's reputation can create practical costs even if the superstition is irrational.`,
-      `The guard's survival of the first attack, because surviving when others died suggests he may have known more about the threat than he admits.`
-    ],
-    correctIndex: 1,
-  },
-
-  {
-    text: `A powerful mage offers to erase a painful memory from a party member. The mage says the memory is causing the person's current fear and that removing it will allow them to function normally. The party member wants the memory gone. Another companion warns that the memory may contain information about a past betrayal that the party has never fully investigated. The mage says the procedure cannot be undone. The party member insists the betrayal no longer matters. What should receive the greatest weight before consenting?`,
-    options: [
-      `The person's desire to remove the memory, because the decision concerns their own suffering and they should normally control what happens to their mind.`,
-      `The possibility that the memory contains useful information, because preserving knowledge about a past betrayal may protect the party from repeating the same mistake.`,
-      `The irreversible nature of the procedure, because removing information permanently is fundamentally different from temporarily treating the distress caused by remembering it.`,
-      `The mage's expertise, because a trained practitioner is better positioned to determine whether the memory is harmful enough to justify permanent alteration.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A town's harvest fails unexpectedly. The mayor blames a neighboring village for secretly diverting water. The neighboring village denies it and says a landslide changed the river's course. You inspect the river and find evidence of a recent landslide upstream. However, you also find a newly constructed channel near the neighboring village that redirects some water. The neighboring villagers say the channel was built years ago and has always existed. The mayor demands immediate retaliation because the town will run out of food within weeks. What should happen first?`,
-    options: [
-      `Retaliate against the neighboring village because the new channel provides physical evidence that they are benefiting from the shortage.`,
-      `Destroy the diversion channel because even if it predates the current shortage, removing it would restore water to the town while the dispute is investigated.`,
-      `Determine whether the channel actually changed the amount and timing of water reaching the town, because its existence alone does not establish that it caused the current shortage.`,
-      `Trust the landslide explanation because a natural event provides a simpler explanation for the river's changed course than deliberate interference by another village.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A companion claims that a wealthy noble is secretly funding bandits because several bandit attacks occurred near estates owned by the noble's rivals. The companion provides maps showing the locations. The noble says the attacks are harming his own trade and offers a large reward for whoever captures the bandits. You discover that the bandits have never attacked the noble's own caravans. However, the noble's estates are all located on roads used by his rivals. A captured bandit refuses to name their employer but says the attacks are "business." What is the strongest conclusion currently supported?`,
-    options: [
-      `The noble is probably funding the bandits because the geographic pattern favors his rivals being targeted while his own caravans remain unharmed.`,
-      `The noble is probably innocent because the attacks also harm his trade and he has offered a reward for stopping them.`,
-      `The evidence establishes a pattern worth investigating but does not yet distinguish deliberate sponsorship from bandits independently choosing profitable targets.`,
-      `The captured bandit's statement strongly supports the noble's involvement because "business" suggests the attacks are financially organized rather than random.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A party member makes a serious mistake during an expedition and causes the loss of valuable supplies. They immediately admit what happened and explain that they ignored a warning because they believed the route was safe. Another member wants them removed from future decisions. The first member has otherwise made several good judgments during the journey. A third member says keeping them involved would demonstrate that mistakes are acceptable. The lost supplies cannot be recovered. What should determine their future role?`,
-    options: [
-      `The seriousness of the loss, because someone whose decision caused substantial harm should temporarily lose authority even if the mistake was admitted honestly.`,
-      `Their willingness to admit the mistake, because accountability is more important than whether the decision itself turned out badly.`,
-      `Whether the reasoning that produced the mistake reveals a recurring weakness that is likely to appear again, rather than treating one bad outcome as proof of general incompetence.`,
-      `Their previous successful decisions, because a strong overall record should outweigh a single failure unless the failure demonstrates intentional recklessness.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A local guide tells your party that a particular forest path is safe and offers to lead you through it for a fee. A hunter says the path is dangerous because wolves have been seen nearby. The guide says the hunter exaggerates to protect his own hunting grounds. You discover wolf tracks near the path, but also find several fresh human footprints. The guide has traveled the path recently, while the hunter has lived nearby for twenty years. The path would save your party an entire day. What is the best next step?`,
-    options: [
-      `Trust the guide because recent firsthand knowledge is more relevant than the hunter's general familiarity with the forest.`,
-      `Trust the hunter because long-term familiarity gives him better knowledge of recurring dangers than someone who may have traveled the path only once.`,
-      `Investigate the fresh human tracks because determining whether the path is currently being used could provide information that distinguishes the competing explanations for the wolf activity.`,
-      `Avoid the path because the presence of wolves creates a physical danger that cannot be justified merely by saving one day of travel.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A city official asks your party to arrest a popular street performer for inciting unrest. The official says the performer has been encouraging crowds to disobey the law. The performer says he has only been criticizing the city government. Several citizens support the performer, while others say his speeches have become increasingly hostile. You listen to one speech and hear criticism of the mayor but no direct call for violence. The official says the party cannot wait until violence occurs. What should most affect your immediate response?`,
-    options: [
-      `The official's warning should be taken seriously because preventing unrest may require action before explicit violence occurs.`,
-      `The performer's popularity should matter because widespread support suggests his criticism reflects genuine public grievances rather than deliberate incitement.`,
-      `The actual content and context of the performer's statements should be examined carefully rather than treating criticism, popularity, or the official's accusation as proof of intent.`,
-      `The absence of an explicit call for violence should settle the matter because speech that does not directly advocate violence should not be treated as a threat.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A merchant offers your party two contracts. The first pays a large amount immediately but requires you to transport an unknown sealed package. The second pays half as much but clearly describes ordinary goods and allows inspection. The merchant says the sealed package contains valuable personal documents and that opening it would violate his privacy. He becomes defensive when asked why the documents are worth so much. The party needs money soon, but accepting the first contract could create legal or physical risks. What should be prioritized?`,
-    options: [
-      `The immediate payment, because the party's financial needs are concrete while the danger associated with the sealed package remains speculative.`,
-      `The merchant's defensiveness, because his emotional reaction suggests he is concealing information that could make the first contract unsafe.`,
-      `The ability to inspect or otherwise establish the package's nature and the party's legal exposure before accepting an obligation whose risks cannot currently be evaluated.`,
-      `The safer contract, because when two opportunities differ mainly in uncertainty, the option with fewer unknowns should generally be preferred.`
-    ],
-    correctIndex: 2,
-  },
-
-  {
-    text: `A young noble asks your party to secretly escort her out of the city. She says her family intends to force her into a marriage. She provides a forged-looking travel document and claims she cannot obtain a legitimate one without being discovered. A servant privately confirms that the family is arranging a marriage but says the noble is also trying to escape a debt. The noble denies owing money. The family offers your party a large reward to return her safely. The city guards have not issued any public warrant. What should you establish before acting?`,
-    options: [
-      `Whether the noble genuinely wants to leave, because her consent is the central issue when deciding whether helping her is appropriate.`,
-      `Whether the family has a legal claim to return her, because assisting someone who is technically a fugitive could expose the party to consequences regardless of her reasons.`,
-      `Whether the servant's account is accurate, because the existence of both marriage pressure and possible debt means the noble may be presenting only the part of the story that benefits her.`,
-      `Whether there is an immediate threat to the noble's safety, because a time-sensitive danger could justify temporary assistance even if the larger dispute remains unresolved.`
-    ],
-    correctIndex: 3,
-  },
-
-  {
-    text: `A town has hired your party to investigate why several wells have become contaminated. A local alchemist says a rival guild is dumping waste upstream. The rival guild denies this and says the contamination began after a new mine opened. You inspect the river and find unusual sediment near the mine, but the alchemist points out that the mine's drainage flows through an area controlled by the rival guild. The guild's workers insist they have never handled the substance found in the water. A laboratory test will take three days. The town's remaining clean water will last four days. What should the party recommend?`,
-    options: [
-      `Blame the mine immediately because the unusual sediment provides physical evidence and the remaining water supply makes delay dangerous.`,
-      `Blame the rival guild because the drainage passes through its territory, giving it both opportunity and a possible incentive to conceal contamination.`,
-      `Wait for the laboratory result because assigning responsibility before identifying the substance could lead to costly retaliation against the wrong party.`,
-      `Begin emergency measures to secure alternative water while continuing the investigation, because the immediate health risk and the question of responsibility do not need to be solved by the same decision.`
-    ],
-    correctIndex: 3,
   },
 ]
 
@@ -812,70 +653,121 @@ function shuffle<T>(arr: T[]): T[] {
   return out
 }
 
-interface PreparedRound {
+interface PreparedStage {
   text: string
-  options: string[]
-  correctIndex: number
+  options: ScenarioOption[]
+}
+
+interface PreparedRound {
+  stage: PreparedStage
+  followUp?: PreparedStage
+}
+
+function shuffleStage(stage: ScenarioStage): PreparedStage {
+  return { text: stage.text, options: shuffle(stage.options) }
 }
 
 function prepareRounds(): PreparedRound[] {
-  const picked = shuffle(BANK).slice(0, ROUND_COUNT)
-  return picked.map((t) => {
-    const optionOrder = shuffle(t.options.map((_, i) => i))
-    return {
-      text: t.text,
-      options: optionOrder.map((i) => t.options[i]),
-      correctIndex: optionOrder.indexOf(t.correctIndex),
-    }
-  })
+  return shuffle(BANK)
+    .slice(0, ROUND_COUNT)
+    .map((t) => ({
+      stage: shuffleStage(t),
+      followUp: t.followUp ? shuffleStage(t.followUp) : undefined,
+    }))
 }
 
+// Judgment quality (0-4) converts to a 0-100 raw quality. Confidence then adjusts it:
+function pointsFor(score: number, confidence: Confidence): number {
+  const base = (score / 4) * 90
+
+  const calibrationBonus =
+    confidence === 'high'
+      ? score === 4 ? 10
+        : score === 3 ? 5
+          : score === 2 ? 0
+            : score === 1 ? -5
+              : -10
+      : confidence === 'low'
+        ? score === 0 ? 10
+          : score === 1 ? 5
+            : score === 2 ? 0
+              : score === 3 ? -5
+                : -10
+        : 0
+
+  return Math.max(0, Math.min(100, base + calibrationBonus))
+}
+
+type Step = 'stage' | 'followUp'
+
 interface InsightScenarioTestProps {
-  onComplete: (correctCount: number) => void
+  onComplete: (score0to100: number) => void
 }
 
 export default function InsightScenarioTest({ onComplete }: InsightScenarioTestProps) {
   const rounds = useMemo(prepareRounds, [])
   const [index, setIndex] = useState(0)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [feedback, setFeedback] = useState<number | null>(null)
+  const [step, setStep] = useState<Step>('stage')
+  const [chosenIndex, setChosenIndex] = useState<number | null>(null)
+  const pointsRef = useRef<number[]>([])
 
   const round = rounds[index]
+  const activeStage = step === 'stage' ? round.stage : round.followUp!
 
-  const handleAnswer = (i: number) => {
-    if (feedback !== null) return
-    setFeedback(i)
-    const isCorrect = i === round.correctIndex
-    const nextCount = correctCount + (isCorrect ? 1 : 0)
-    setCorrectCount(nextCount)
-    setTimeout(() => {
-      setFeedback(null)
-      if (index + 1 >= ROUND_COUNT) {
-        onComplete(nextCount)
-      } else {
-        setIndex(index + 1)
-      }
-    }, 1400)
+  const advance = () => {
+    setChosenIndex(null)
+    if (step === 'stage' && round.followUp) {
+      setStep('followUp')
+      return
+    }
+    setStep('stage')
+    if (index + 1 >= ROUND_COUNT) {
+      const total = pointsRef.current.reduce((a, b) => a + b, 0)
+      onComplete(Math.round(total / pointsRef.current.length))
+    } else {
+      setIndex(index + 1)
+    }
+  }
+
+  const chooseOption = (i: number) => {
+    if (chosenIndex !== null) return
+    setChosenIndex(i)
+  }
+
+  const chooseConfidence = (confidence: Confidence) => {
+    if (chosenIndex === null) return
+    pointsRef.current.push(pointsFor(activeStage.options[chosenIndex].score, confidence))
+    advance()
   }
 
   return (
     <div className="insight-test">
       <p className="matrix-progress">
         Scenario {index + 1} of {ROUND_COUNT}
+        {step === 'followUp' ? ' — new information' : ''}
       </p>
-      <p className="insight-text">{round.text}</p>
-      <div className="insight-options">
-        {round.options.map((opt, i) => (
-          <button
-            key={i}
-            className={`insight-option ${feedback !== null && i === round.correctIndex ? 'insight-option--correct' : ''}`}
-            onClick={() => handleAnswer(i)}
-            disabled={feedback !== null}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
+      <p className="insight-text">{activeStage.text}</p>
+
+      {chosenIndex === null ? (
+        <div className="insight-options">
+          {activeStage.options.map((opt, i) => (
+            <button key={i} className="insight-option" onClick={() => chooseOption(i)}>
+              {opt.text}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="insight-confidence">
+          <p className="insight-confidence-prompt">How confident are you in that judgment?</p>
+          <div className="insight-confidence-options">
+            {(['low', 'medium', 'high'] as Confidence[]).map((c) => (
+              <button key={c} className="insight-option" onClick={() => chooseConfidence(c)}>
+                {c[0].toUpperCase() + c.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

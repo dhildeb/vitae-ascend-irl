@@ -119,12 +119,12 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
 
         <p className="modal-hint">{def.hint}</p>
 
-        {def.dataQuality === 'thin' && (
+        {/* {def.dataQuality === 'thin' && (
           <p className="modal-caveat">
             Heads up: this test's benchmarks are the least well-established in the battery — treat the score as a
             rough estimate.
           </p>
-        )}
+        )} */}
 
         {(isRepBased || isDistance || isLoad || isCount) && (
           <form className="modal-form" onSubmit={handleManualSubmit}>

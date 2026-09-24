@@ -221,8 +221,8 @@ body {
   background: var(--parchment);
   color: var(--charcoal);
   width: 100%;
-  max-width: 420px;
-  max-height: 85vh;
+  max-width: 75vw;
+  max-height: 90vh;
   overflow-y: auto;
   border-radius: 3px;
   padding: 28px;
@@ -643,13 +643,14 @@ body {
 }
 
 .perception-cell {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1;
   aspect-ratio: 1;
   background: #fbf8f1;
   border: 1px solid var(--parchment-line);
   border-radius: 2px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 14px;
   color: var(--charcoal);
   cursor: pointer;
 }
@@ -694,9 +695,21 @@ body {
   cursor: pointer;
 }
 
-.insight-option--correct {
-  border-color: var(--go-green);
-  border-width: 2px;
+.insight-confidence-prompt {
+  font-size: 13px;
+  color: #8a7f68;
+  margin: 0;
+  text-align: center;
+}
+
+.insight-confidence-options {
+  display: flex;
+  gap: 8px;
+}
+
+.insight-confidence-options .insight-option {
+  flex: 1;
+  text-align: center;
 }
 
 /* Judgment (Iowa Gambling Task) */

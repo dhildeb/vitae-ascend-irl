@@ -57,7 +57,7 @@ export type InputType =
   | 'symbol_digit_count' // in-app 90s symbol-to-digit substitution
   | 'stroop_count' // in-app 45s Stroop color-naming task
   | 'perception_ms' // in-app visual search, commits avg detection time
-  | 'insight_count' // in-app social-scenario judgment, 8 rounds
+  | 'insight_count' // in-app judgment scenarios, 8 rounds; weighted answer quality + confidence calibration, 0-100
   | 'igt_score' // in-app Iowa Gambling Task, commits net advantageous-deck score
   | 'gonogo_pct' // in-app go/no-go inhibition task, commits composite go+no-go accuracy %
   | 'recall_count' // in-app brief-exposure scene recall, commits correct-round count

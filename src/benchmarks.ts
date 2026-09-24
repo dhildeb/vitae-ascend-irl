@@ -467,29 +467,29 @@ const stroopAnchors: AnchorPoint[] = [
 // Avg detection time (ms) across 6 visual-search rounds, lower is better. Self-consistent
 // estimate, not population-normed.
 const perceptionAnchors: AnchorPoint[] = [
-  { raw: 3000, score: 3 },
-  { raw: 2400, score: 5 },
-  { raw: 1700, score: 8 },
-  { raw: 1200, score: 10 },
-  { raw: 950, score: 12 },
-  { raw: 750, score: 14 },
-  { raw: 600, score: 16 },
-  { raw: 500, score: 18 },
-  { raw: 420, score: 20 },
+  { raw: 6000, score: 3 },
+  { raw: 4500, score: 5 },
+  { raw: 3500, score: 8 },
+  { raw: 2800, score: 10 },
+  { raw: 2200, score: 12 },
+  { raw: 1750, score: 14 },
+  { raw: 1400, score: 16 },
+  { raw: 1100, score: 18 },
+  { raw: 850, score: 20 },
 ]
 
-// Correct out of 8 social-scenario rounds, higher is better. Same difficulty-ramp shape as
-// matrix reasoning, since it's the same "8 items, original content" format.
+// Composite 0-100 across 8 judgment scenarios: each option is weighted 0-4 for judgment
+// quality (no single "correct" answer), scaled to 0-100, then adjusted by stated confidence
+// (low halves the points, high adds a bonus only on a top-two option) and averaged.
 const insightAnchors: AnchorPoint[] = [
-  { raw: 0, score: 3 },
-  { raw: 1, score: 6 },
-  { raw: 2, score: 8 },
-  { raw: 3, score: 9 },
-  { raw: 4, score: 10 },
-  { raw: 5, score: 12 },
-  { raw: 6, score: 14 },
-  { raw: 7, score: 17 },
-  { raw: 8, score: 20 },
+  { raw: 25, score: 3 },
+  { raw: 40, score: 6 },
+  { raw: 50, score: 8 },
+  { raw: 58, score: 10 },
+  { raw: 66, score: 12 },
+  { raw: 74, score: 14 },
+  { raw: 84, score: 17 },
+  { raw: 95, score: 20 },
 ]
 
 // Iowa Gambling Task, adapted to 25 trials (classic clinical version is ~100). Raw =
@@ -897,9 +897,9 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
   insight_scenario: {
     id: 'insight_scenario',
     label: 'Reading the Room',
-    unit: 'correct/8',
+    unit: '0-100',
     inputType: 'insight_count',
-    hint: '8 short social scenarios. Pick what\u2019s most likely really going on beneath the surface. Original scenarios, randomly selected and reworded each attempt.',
+    hint: '8 short scenarios with no single correct answer \u2014 every option is defensible to some degree. Pick the response you judge best, then rate your own confidence; the score rewards good judgment and honest calibration, not guessing the "right" answer.',
     dataQuality: 'thin',
     source: 'Original content — not a validated psychometric instrument',
     anchors: insightAnchors,

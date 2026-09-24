@@ -32,16 +32,24 @@ interface PerceptionSearchTestProps {
 }
 
 export default function PerceptionSearchTest({ onComplete }: PerceptionSearchTestProps) {
-  const [roundIndex, setRoundIndex] = useState(0)
+  const [roundIndex, setRoundIndex] = useState(-1)
   const [times, setTimes] = useState<number[]>([])
   const [startedAt, setStartedAt] = useState<number>(() => performance.now())
 
   const round = useMemo(() => generateRound(GRID_SIZES[roundIndex]), [roundIndex])
 
+  const handleNext = () => {
+    setRoundIndex(roundIndex + 1)
+    setStartedAt(performance.now())
+  }
+
   const handleClick = (index: number) => {
     const isCorrect = index === round.targetIndex
-    const elapsed = isCorrect ? performance.now() - startedAt : WRONG_CLICK_PENALTY_MS
-    const nextTimes = [...times, elapsed]
+    const elapsed = performance.now() - startedAt
+    const scoredTime = isCorrect
+      ? elapsed
+      : elapsed + WRONG_CLICK_PENALTY_MS
+    const nextTimes = [...times, scoredTime]
 
     if (roundIndex + 1 >= GRID_SIZES.length) {
       const avg = Math.round(nextTimes.reduce((a, b) => a + b, 0) / nextTimes.length)
@@ -49,8 +57,7 @@ export default function PerceptionSearchTest({ onComplete }: PerceptionSearchTes
       return
     }
     setTimes(nextTimes)
-    setRoundIndex(roundIndex + 1)
-    setStartedAt(performance.now())
+    handleNext()
   }
 
   return (
@@ -58,13 +65,17 @@ export default function PerceptionSearchTest({ onComplete }: PerceptionSearchTes
       <p className="matrix-progress">
         Round {roundIndex + 1} of {GRID_SIZES.length} — find the different letter
       </p>
-      <div className="perception-grid" style={{ gridTemplateColumns: `repeat(${round.cols}, 1fr)` }}>
-        {round.cells.map((letter, i) => (
-          <button key={i} className="perception-cell" onClick={() => handleClick(i)}>
-            {letter}
-          </button>
-        ))}
-      </div>
+      {roundIndex < 0 ? (
+        <button type="button" className="btn btn-primary" onClick={handleNext}>Start</button>
+      ) : (
+        <div className="perception-grid" style={{ gridTemplateColumns: `repeat(${round.cols}, 1fr)` }}>
+          {round.cells.map((letter, i) => (
+            <button key={i} className="perception-cell" onClick={() => handleClick(i)}>
+              {letter}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
