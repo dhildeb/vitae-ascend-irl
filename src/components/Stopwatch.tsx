@@ -39,6 +39,17 @@ export default function Stopwatch({ onCapture }: StopwatchProps) {
 
   return (
     <div className="stopwatch">
+      {!running && (
+        <div className="manual-time">
+          <input
+            className="manual-time-input"
+            type="number"
+            step="0.1"
+            value={seconds.toFixed(1)}
+            onChange={(e) => setElapsedMs(parseFloat(e.target.value) * 1000)}
+          />
+        </div>
+      )}
       <div className="stopwatch-display">{seconds.toFixed(1)}s</div>
       <div className="stopwatch-controls">
         {!running && elapsedMs === 0 && (

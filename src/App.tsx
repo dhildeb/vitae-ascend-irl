@@ -27,7 +27,7 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sheet))
   }, [sheet])
 
-  const setProfile = (profile: Profile) => {
+  const setProfile = (profile: Profile | null) => {
     setSheet((prev) => ({ ...prev, profile }))
   }
 
@@ -60,7 +60,7 @@ export default function App() {
       <header className="page-header">
         <span className="page-eyebrow">Character Sheet</span>
         <h1>Vitae Ascend</h1>
-        <p className="page-subtitle">
+        <p className="page-subtitle" title='Change Weight' onClick={() => setProfile(null)}>
           Bodyweight: {sheet.profile.bodyweightKg}kg · Testing {implementedStats.length} of {STAT_ORDER.length} stats
           so far
         </p>

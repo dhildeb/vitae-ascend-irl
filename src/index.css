@@ -57,6 +57,7 @@ body {
 }
 
 .page-subtitle {
+  cursor: pointer;
   font-size: 16px;
   color: var(--mist);
   margin: 0;
@@ -202,6 +203,20 @@ body {
 .btn-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.manual-time {
+  margin-bottom: 12px;
+}
+
+.manual-time-input {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--parchment-line);
+  border-radius: 3px;
+  background: #fbf8f1;
+  color: var(--charcoal);
 }
 
 /* Modal */
