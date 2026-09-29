@@ -1,4 +1,4 @@
-export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS'
+export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA'
 
 export interface Profile {
   name: string
@@ -45,6 +45,12 @@ export type TestId =
   | 'breath_count'
   | 'stillness_hold'
   | 'purpose_in_life'
+  | 'gci_self'
+  | 'gci_peer'
+  | 'persuasive_pitch'
+  | 'rhythm_timing'
+  | 'performance_background'
+  | 'ai_judged_pitch'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -69,6 +75,10 @@ export type InputType =
   | 'likert_survey' // multi-item 1-7 self-report survey, commits average score
   | 'breath_count_pct' // in-app Breath-Counting Task, commits accuracy %
   | 'likert_survey' // in-app multi-item Likert questionnaire, commits average score
+  | 'volume_expressiveness' // in-app mic-based vocal dynamics analysis, local only, nothing recorded/saved
+  | 'rhythm_ms' // in-app tap-to-beat timing task, commits avg timing error
+  | 'checklist_count' // in-app multi-select checklist, commits count checked
+  | 'ai_judged_pct' // optional: records + transcribes + sends to Claude via the user's own API key
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -126,10 +136,11 @@ export const STAT_LABELS: Record<StatKey, { label: string; tagline: string; impl
   DEX: { label: 'Dexterity', tagline: 'Speed, reflex & balance', implemented: true },
   CON: { label: 'Constitution', tagline: 'Stamina & endurance', implemented: true },
   INT: { label: 'Intelligence', tagline: 'Reasoning, memory & processing speed', implemented: true },
-  WIS: { label: 'Wisdom', tagline: 'Perception, insight, judgment & inner discipline', implemented: true },
+  WIS: { label: 'Wisdom', tagline: 'Perception, judgment & inner discipline', implemented: true },
+  CHA: { label: 'Charisma', tagline: 'Presence, persuasion & social influence', implemented: true },
 }
 
-export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT', 'WIS']
+export const STAT_ORDER: StatKey[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
 
 export const emptyTestsState = (): TestsState => ({
   pushups: { history: [] },
@@ -171,6 +182,12 @@ export const emptyTestsState = (): TestsState => ({
   breath_count: { history: [] },
   stillness_hold: { history: [] },
   purpose_in_life: { history: [] },
+  gci_self: { history: [] },
+  gci_peer: { history: [] },
+  persuasive_pitch: { history: [] },
+  rhythm_timing: { history: [] },
+  performance_background: { history: [] },
+  ai_judged_pitch: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

@@ -1208,3 +1208,134 @@ input:focus-visible {
   background: var(--ember);
   color: var(--parchment);
 }
+
+.likert-peer-input {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--parchment-line);
+  border-radius: 3px;
+  background: #fbf8f1;
+  color: var(--charcoal);
+}
+
+/* Persuasive Pitch / AI-Judged Pitch (shared visual language) */
+
+.pitch-test,
+.ai-pitch-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.pitch-instructions {
+  font-size: 13px;
+  color: #6b6153;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pitch-prompt-preview {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.pitch-prompt-active {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.pitch-recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ember);
+}
+
+.pitch-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ember);
+  animation: pitch-blink 1s ease-in-out infinite;
+}
+
+@keyframes pitch-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.api-key-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--parchment-line);
+  border-radius: 3px;
+  background: #fbf8f1;
+  color: var(--charcoal);
+}
+
+/* Rhythm & Timing */
+
+.rhythm-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.rhythm-pulse {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid var(--parchment-line);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+}
+
+.rhythm-pulse--active {
+  background-color: var(--ember);
+  border-color: var(--ember);
+  transform: scale(1.1);
+}
+
+/* Performance Background checklist */
+
+.checklist-test {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--charcoal);
+  cursor: pointer;
+}
+
+.checklist-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ember);
+}

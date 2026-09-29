@@ -13,7 +13,7 @@ const profiles: Profile[] = JSON.parse(localStorage.getItem('profiles') || '[]')
 export default function ProfileSetup({ onComplete, currentProfile }: ProfileSetupProps) {
   const [unit, setUnit] = useState<WeightUnit>(loadUnitPref)
   const [name, setName] = useState(currentProfile?.name || '')
-  const [createNew, setCreateNew] = useState(false)
+  const [createNew, setCreateNew] = useState(profiles.length === 0)
   const [weight, setWeight] = useState('')
 
   const numeric = Number(weight)

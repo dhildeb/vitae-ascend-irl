@@ -17,6 +17,11 @@ import GoNoGoTest from './GoNoGoTest'
 import SceneRecallTest from './SceneRecallTest'
 import BreathCountTest from './BreathCountTest'
 import PurposeInLifeSurvey from './PurposeInLifeSurvey'
+import GCISurvey from './GCISurvey'
+import PersuasivePitchTest from './PersuasivePitchTest'
+import RhythmTimingTest from './RhythmTimingTest'
+import PerformanceBackgroundChecklist from './PerformanceBackgroundChecklist'
+import AIJudgedPitchTest from './AIJudgedPitchTest'
 
 interface TestModalProps {
   def: TestDef
@@ -49,6 +54,10 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isSceneRecallGame = def.inputType === 'recall_count'
   const isBreathGame = def.inputType === 'breath_pct'
   const isLikertSurvey = def.inputType === 'likert_survey'
+  const isPitchGame = def.inputType === 'volume_expressiveness'
+  const isRhythmGame = def.inputType === 'rhythm_ms'
+  const isChecklist = def.inputType === 'checklist_count'
+  const isAIJudged = def.inputType === 'ai_judged_pct'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -236,6 +245,13 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isSceneRecallGame && <SceneRecallTest onComplete={commit} />}
         {isBreathGame && <BreathCountTest onComplete={commit} />}
         {isLikertSurvey && <PurposeInLifeSurvey onComplete={commit} />}
+        {isLikertSurvey && def.id === 'purpose_in_life' && <PurposeInLifeSurvey onComplete={commit} />}
+        {isLikertSurvey && def.id === 'gci_self' && <GCISurvey mode="self" onComplete={commit} />}
+        {isLikertSurvey && def.id === 'gci_peer' && <GCISurvey mode="peer" onComplete={commit} />}
+        {isPitchGame && <PersuasivePitchTest onComplete={commit} />}
+        {isRhythmGame && <RhythmTimingTest onComplete={commit} />}
+        {isChecklist && <PerformanceBackgroundChecklist onComplete={commit} />}
+        {isAIJudged && <AIJudgedPitchTest onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>

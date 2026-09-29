@@ -578,6 +578,79 @@ const sceneRecallAnchors: AnchorPoint[] = [
   { raw: 5, score: 20 },
 ]
 
+// ---------- CHARISMA ----------
+// The most structurally novel stat: charisma is relational, not a solo property, so the
+// field's own gold standard is self-report validated against other-report, not a solo
+// performance test. Anchors here are almost entirely self-consistent estimates rather than
+// cited population data — flagged 'thin'/'moderate' throughout, deliberately.
+
+// Original 6-item scale inspired by (not copied from) the General Charisma Inventory
+// (Tskhay et al.). Average 1-7, higher is better.
+const gciAnchors: AnchorPoint[] = [
+  { raw: 2.0, score: 3 },
+  { raw: 2.8, score: 5 },
+  { raw: 3.8, score: 8 },
+  { raw: 4.3, score: 10 },
+  { raw: 4.9, score: 12 },
+  { raw: 5.4, score: 14 },
+  { raw: 5.9, score: 16 },
+  { raw: 6.4, score: 18 },
+  { raw: 7.0, score: 20 },
+]
+
+// Coefficient of variation of vocal volume during a 30s pitch, scaled x100. Purely
+// experimental — no published norms for browser-based amateur speakers exist.
+const pitchExpressivenessAnchors: AnchorPoint[] = [
+  { raw: 25, score: 3 },
+  { raw: 35, score: 5 },
+  { raw: 45, score: 7 },
+  { raw: 55, score: 9 },
+  { raw: 60, score: 10 },
+  { raw: 66, score: 12 },
+  { raw: 73, score: 14 },
+  { raw: 81, score: 16 },
+  { raw: 90, score: 18 },
+  { raw: 97, score: 20 },
+]
+
+// Average absolute timing error (ms) tapping to a 100bpm beat, lower is better. Estimated.
+const rhythmAnchors: AnchorPoint[] = [
+  { raw: 400, score: 3 },
+  { raw: 300, score: 5 },
+  { raw: 220, score: 8 },
+  { raw: 170, score: 10 },
+  { raw: 130, score: 12 },
+  { raw: 100, score: 14 },
+  { raw: 75, score: 16 },
+  { raw: 50, score: 18 },
+  { raw: 30, score: 20 },
+]
+
+// Count of checked items, 0-6. Self-report, correlational at best.
+const performanceBackgroundAnchors: AnchorPoint[] = [
+  { raw: 0, score: 3 },
+  { raw: 1, score: 6 },
+  { raw: 2, score: 9 },
+  { raw: 3, score: 12 },
+  { raw: 4, score: 15 },
+  { raw: 5, score: 18 },
+  { raw: 6, score: 20 },
+]
+
+// Claude's own 0-100 rubric score for the transcript. Inherently unvalidated as an LLM-judge
+// calibration — treated as a rough identity mapping rather than a derived curve.
+const aiJudgedAnchors: AnchorPoint[] = [
+  { raw: 10, score: 3 },
+  { raw: 20, score: 5 },
+  { raw: 35, score: 8 },
+  { raw: 50, score: 10 },
+  { raw: 60, score: 12 },
+  { raw: 70, score: 14 },
+  { raw: 80, score: 16 },
+  { raw: 90, score: 18 },
+  { raw: 98, score: 20 },
+]
+
 export const TEST_DEFS: Record<TestId, TestDef> = {
   pushups: {
     id: 'pushups',
@@ -1010,6 +1083,74 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     source: 'Original paradigm adapted from inattentional-blindness / incidental-recall research',
     anchors: sceneRecallAnchors,
   },
+  gci_self: {
+    id: 'gci_self',
+    label: 'Charisma Inventory (self-rated)',
+    shortLabel: 'Self-Rated',
+    altGroupLabel: 'Charisma Inventory',
+    unit: 'avg 1-7',
+    inputType: 'likert_survey',
+    hint: '6 short statements about how you come across to others, rated 1-7. Original items inspired by the General Charisma Inventory.',
+    dataQuality: 'moderate',
+    source: 'Inspired by Tskhay et al.\u2019s General Charisma Inventory — self-rated scores have shown real correlation with independent peer ratings in published research',
+    optional: true,
+    anchors: gciAnchors,
+  },
+  gci_peer: {
+    id: 'gci_peer',
+    label: 'Charisma Inventory (peer-rated)',
+    shortLabel: 'Peer-Rated',
+    altGroupLabel: 'Charisma Inventory',
+    unit: 'avg 1-7',
+    inputType: 'likert_survey',
+    hint: 'Send the same 6 statements to 3-5 people who know you, then enter the average rating they gave for each. The field\u2019s actual validated measurement approach — other-report is what self-report is checked against in the research.',
+    dataQuality: 'strong',
+    source: 'Inspired by Tskhay et al.\u2019s General Charisma Inventory, using its other-report validation methodology directly',
+    optional: true,
+    anchors: gciAnchors,
+  },
+  persuasive_pitch: {
+    id: 'persuasive_pitch',
+    label: 'Persuasive Pitch',
+    unit: 'expressiveness',
+    inputType: 'volume_expressiveness',
+    hint: 'A 30-second speaking prompt. Nothing is recorded or saved — only vocal volume dynamics are analyzed live, in your browser, via the Web Audio API. Needs microphone access.',
+    dataQuality: 'thin',
+    source: 'Experimental — vocal expressiveness correlates with perceived charisma in the literature, but no published norms exist for this specific browser-based measurement',
+    anchors: pitchExpressivenessAnchors,
+  },
+  rhythm_timing: {
+    id: 'rhythm_timing',
+    label: 'Rhythm & Timing',
+    unit: 'ms avg error',
+    inputType: 'rhythm_ms',
+    hint: 'Tap along with a steady pulse. Measures timing precision — a genuine, objective performance-control skill.',
+    dataQuality: 'thin',
+    source: 'Original timing task, self-consistent difficulty calibration',
+    anchors: rhythmAnchors,
+  },
+  performance_background: {
+    id: 'performance_background',
+    label: 'Performance Background',
+    unit: 'checked/6',
+    inputType: 'checklist_count',
+    hint: 'Which of these do you have real experience with? Self-report, correlational at best — included for concept-fit.',
+    dataQuality: 'thin',
+    source: 'Self-report — not a measured test',
+    optional: true,
+    anchors: performanceBackgroundAnchors,
+  },
+  ai_judged_pitch: {
+    id: 'ai_judged_pitch',
+    label: 'AI-Judged Pitch',
+    unit: '0-100',
+    inputType: 'ai_judged_pct',
+    hint: 'Optional. Records a 30s pitch, transcribes it locally via your browser\u2019s speech recognition, then sends the transcript (not audio) to Claude using your own Anthropic API key for scoring. Costs a small amount on your account per attempt. Never required for a full score.',
+    dataQuality: 'thin',
+    source: 'LLM-as-judge — inherently unvalidated as a calibrated instrument',
+    optional: true,
+    anchors: aiJudgedAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -1040,6 +1181,11 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
   WIS: {
     core: ['perception_search', 'insight_scenario', 'judgment_igt', 'go_no_go', 'scene_recall', 'breath_count', 'stillness_hold'],
     bonus: ['purpose_in_life'],
+  },
+  CHA: {
+    core: ['persuasive_pitch', 'rhythm_timing'],
+    alternatives: [['gci_self', 'gci_peer']],
+    bonus: ['performance_background', 'ai_judged_pitch'],
   },
 }
 
