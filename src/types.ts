@@ -1,6 +1,7 @@
 export type StatKey = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS'
 
 export interface Profile {
+  name: string
   bodyweightKg: number
 }
 

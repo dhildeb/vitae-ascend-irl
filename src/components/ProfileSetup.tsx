@@ -5,10 +5,15 @@ import { toKg, fromKg, loadUnitPref, saveUnitPref } from '../units'
 
 interface ProfileSetupProps {
   onComplete: (profile: Profile) => void
+  currentProfile?: Profile | null
 }
 
-export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
+const profiles: Profile[] = JSON.parse(localStorage.getItem('profiles') || '[]')
+
+export default function ProfileSetup({ onComplete, currentProfile }: ProfileSetupProps) {
   const [unit, setUnit] = useState<WeightUnit>(loadUnitPref)
+  const [name, setName] = useState(currentProfile?.name || '')
+  const [createNew, setCreateNew] = useState(false)
   const [weight, setWeight] = useState('')
 
   const numeric = Number(weight)
@@ -25,20 +30,42 @@ export default function ProfileSetup({ onComplete }: ProfileSetupProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (kgValue === null || !canSubmit) return
-    onComplete({ bodyweightKg: Math.round(kgValue * 10) / 10 })
+    if (kgValue === null || name.trim() === '' || !canSubmit) return
+    window.localStorage.setItem('profiles', JSON.stringify([...profiles.filter(p => p.name !== name), { name, bodyweightKg: Math.round(kgValue * 10) / 10 }]))
+    onComplete({ name: name, bodyweightKg: Math.round(kgValue * 10) / 10 })
+  }
+
+  if (profiles.length > 0 && !createNew && currentProfile === null) {
+    return (
+      <div className="profile-setup">
+        <div className="profile-selections">
+          <h2>Hale and well met adventurer!</h2>
+          {profiles.map((profile) => (
+            <button className="btn btn-outline btn-small" key={profile.name} onClick={() => onComplete(profile)}>{profile.name}</button>
+          ))}
+        </div>
+        <button className="btn btn-outline btn-outline--done btn-small" onClick={() => setCreateNew(true)}>Create new profile</button>
+      </div>
+    )
   }
 
   return (
     <div className="profile-setup">
       <span className="page-eyebrow">Before we begin</span>
-      <h2>What's your bodyweight?</h2>
+      <h2>What's your name and bodyweight?</h2>
       <p className="profile-explainer">
-        No age, no sex — one fixed scale for everyone. Your bodyweight is only used to convert push-up and pull-up
-        reps into an estimated absolute load, so a heavier, stronger person isn't out-scored by a lighter person
-        doing more reps. Nothing is sent anywhere.
+        Your bodyweight is only used to help determine strength scores.
       </p>
       <form onSubmit={handleSubmit} className="profile-form">
+        <label htmlFor="name">Name</label>
+        <input
+          id="name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Arthur Pendragon"
+          disabled={!createNew}
+        />
         <label htmlFor="weight">Bodyweight</label>
         <div className="weight-input-row">
           <input

@@ -6,11 +6,9 @@ import StatCard from './components/StatCard'
 import TestModal from './components/TestModal'
 import ProfileSetup from './components/ProfileSetup'
 
-const STORAGE_KEY = 'vitae-ascend:sheet'
-
-function loadSheet(): CharacterSheet {
+function loadSheet(key: string): CharacterSheet {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     if (!raw) return emptySheet()
     const parsed = JSON.parse(raw) as CharacterSheet
     return { ...emptySheet(), ...parsed, tests: { ...emptySheet().tests, ...parsed.tests } }
@@ -20,15 +18,20 @@ function loadSheet(): CharacterSheet {
 }
 
 export default function App() {
-  const [sheet, setSheet] = useState<CharacterSheet>(loadSheet)
+  const [sheet, setSheet] = useState<CharacterSheet>(loadSheet('default'))
   const [activeTest, setActiveTest] = useState<TestId | null>(null)
+  const [changeWeight, setChangeWeight] = useState(false)
+
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sheet))
+    if (!sheet.profile?.name) return
+    localStorage.setItem(sheet.profile.name, JSON.stringify(sheet))
   }, [sheet])
 
   const setProfile = (profile: Profile | null) => {
-    setSheet((prev) => ({ ...prev, profile }))
+    setChangeWeight(false)
+    const existingSheet = loadSheet(profile?.name || 'default')
+    existingSheet.profile?.name ? setSheet({ ...existingSheet, profile }) : setSheet((prev) => ({ ...prev, profile }))
   }
 
   const handleSubmit = (rawValue: number, score: number, derivedKg?: number) => {
@@ -45,10 +48,10 @@ export default function App() {
     setActiveTest(null)
   }
 
-  if (!sheet.profile) {
+  if (!sheet.profile || changeWeight) {
     return (
       <div className="page page--narrow">
-        <ProfileSetup onComplete={setProfile} />
+        <ProfileSetup onComplete={setProfile} currentProfile={sheet.profile} />
       </div>
     )
   }
@@ -59,8 +62,8 @@ export default function App() {
     <div className="page">
       <header className="page-header">
         <span className="page-eyebrow">Character Sheet</span>
-        <h1>Vitae Ascend</h1>
-        <p className="page-subtitle" title='Change Weight' onClick={() => setProfile(null)}>
+        <h1 className="page-subtitle" title="Change Profile" onClick={() => setProfile(null)}>{sheet.profile.name}</h1>
+        <p className="page-subtitle" title='Change Weight' onClick={() => setChangeWeight(true)}>
           Bodyweight: {sheet.profile.bodyweightKg}kg · Testing {implementedStats.length} of {STAT_ORDER.length} stats
           so far
         </p>

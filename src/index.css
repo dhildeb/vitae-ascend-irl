@@ -323,6 +323,45 @@ body {
   margin-top: 18px;
 }
 
+.breath-test {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.breath-pulse {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--parchment-line);
+  background: transparent;
+  transition: background-color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.breath-pulse--active {
+  background-color: var(--ember);
+  border-color: var(--ember);
+  transform: scale(1.15);
+}
+
+.breath-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.breath-breakdown {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--charcoal);
+}
+
 /* Reaction test */
 
 .reaction-test {
@@ -1037,23 +1076,11 @@ input:focus-visible {
   margin-bottom: 12px;
 }
 
-.sex-option {
-  flex: 1;
-  padding: 11px 0;
-  border: 1.5px solid var(--ink-soft);
-  background: transparent;
-  color: var(--mist);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.sex-option--active {
-  border-color: var(--ember);
-  color: var(--parchment);
-  background: rgba(163, 59, 46, 0.25);
+.profile-selections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .profile-form .btn-primary {

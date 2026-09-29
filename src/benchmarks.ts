@@ -509,18 +509,22 @@ const igtAnchors: AnchorPoint[] = [
 
 // ---------- Mindfulness / inner discipline (folded into WIS) ----------
 
-// Accuracy % on the Breath-Counting Task (Levinson et al. 2014, replicated). Real validated
-// mindfulness paradigm; population accuracy % is estimated rather than a cited study figure.
+// Composite of 3 sub-scores (accuracy, self-monitoring, impulse control) — see
+// BreathCountTest.tsx. selfMonitoring/impulseControl default to 100 when there's
+// nothing to catch, so this composite reads meaningfully higher than plain accuracy
+// for the same underlying performance. Anchors shifted up to compensate, but this is
+// an estimate, not a recalibration from real data — retune once you have playtesting
+// samples to look at the actual score distribution.
 const breathCountAnchors: AnchorPoint[] = [
-  { raw: 15, score: 3 },
-  { raw: 25, score: 5 },
-  { raw: 40, score: 8 },
-  { raw: 55, score: 10 },
-  { raw: 65, score: 12 },
-  { raw: 75, score: 14 },
-  { raw: 85, score: 16 },
+  { raw: 20, score: 3 },
+  { raw: 32, score: 5 },
+  { raw: 48, score: 8 },
+  { raw: 62, score: 10 },
+  { raw: 70, score: 12 },
+  { raw: 78, score: 14 },
+  { raw: 86, score: 16 },
   { raw: 92, score: 18 },
-  { raw: 98, score: 20 },
+  { raw: 97, score: 20 },
 ]
 
 // Seconds motionless, self-stopped on movement. No direct literature — estimated benchmark.
@@ -847,7 +851,7 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     label: 'Breath Hold',
     unit: 'seconds',
     inputType: 'duration_s',
-    hint: 'One normal breath in (do not hyperventilate first), then hold as long as comfortably possible, seated or lying down. Stop immediately if you feel dizzy or lightheaded. This should not approach freediver territory (3-5 min) — that requires specialized training and supervision.',
+    hint: 'Watch for a soft pulse that appears at irregular intervals — no need to control your breathing. Tap "Continue" for each pulse except the 9th in a row, tap "9th" for that one, and tap "Lost Count" any time you notice you\u2019ve drifted. Scores your accuracy, whether you catch your own slips, and whether you jump the gun.',
     dataQuality: 'moderate',
     source: 'Historical RAF fitness-test standard; general breath-hold benchmarks',
     anchors: breathHoldAnchors,
