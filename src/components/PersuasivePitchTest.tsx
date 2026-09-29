@@ -370,11 +370,6 @@ export default function PersuasivePitchTest({
     const recognitionReady = recognitionEndedRef.current
     const recordingReady = recordingStoppedRef.current
 
-    console.log('Finalization check:', {
-      recognitionReady,
-      recordingReady,
-    })
-
     if (!recognitionReady || !recordingReady) return
 
     window.clearTimeout(finalizeGraceRef.current)
@@ -393,24 +388,6 @@ export default function PersuasivePitchTest({
       const transcript = getCompleteTranscript()
       const volumes = volumesRef.current
 
-      console.log('Final recognition session committed:', {
-        final: rebuildFinalTranscript(),
-        interim: interimTranscriptRef.current,
-      })
-
-      console.log('==============================')
-      console.log('PERSUASIVE PITCH COMPLETE')
-      console.log('==============================')
-      console.log(
-        'Recognition sessions:',
-        recognitionSessionRef.current,
-      )
-      console.log('Volumes:', volumes)
-      console.log('Volume samples:', volumes.length)
-      console.log('Final accumulated transcript:', rebuildFinalTranscript())
-      console.log('Last interim transcript:', interimTranscriptRef.current)
-      console.log('Complete transcript:', transcript)
-
       const wordCount = transcript
         .split(/\s+/)
         .map((word) => word.trim())
@@ -418,12 +395,6 @@ export default function PersuasivePitchTest({
 
       const wordsPerMinute =
         DURATION_S > 0 ? (wordCount / DURATION_S) * 60 : 0
-
-      console.log('Transcript word count:', wordCount)
-      console.log(
-        'Speech recognition restart attempts:',
-        recognitionRestartAttemptsRef.current,
-      )
 
       const recordingBlob =
         recordingChunksRef.current.length > 0
@@ -551,54 +522,54 @@ export default function PersuasivePitchTest({
       const clampedFinalScore = finalScore
 
 
-      const result = {
-        noiseFloor:
-          volumes.length > 0
-            ? [...volumes].sort((a, b) => a - b)[
-            Math.floor(volumes.length * 0.1)
-            ]
-            : 0,
-        speechThreshold: 0.005,
-        speechRatio:
-          volumes.length > 0
-            ? volumes.filter((v) => v >= 0.005).length /
-            volumes.length
-            : 0,
-        cv:
-          (() => {
-            const speechVolumes = volumes.filter((v) => v >= 0.005)
-            if (speechVolumes.length < 2) return 0
-            const mean =
-              speechVolumes.reduce((a, b) => a + b, 0) /
-              speechVolumes.length
-            const variance =
-              speechVolumes.reduce(
-                (a, b) => a + (b - mean) ** 2,
-                0,
-              ) / speechVolumes.length
-            return mean > 0 ? Math.sqrt(variance) / mean : 0
-          })(),
-        rawVocalScore,
-        pacingScore,
-        repetitionScore,
-        fluencyScore,
-        vocalScore,
-        wordCount,
-        wordsPerMinute,
-        repeatedWordEvents,
-        repetitionRate,
-        finalTranscript: rebuildFinalTranscript(),
-        interimTranscript: interimTranscriptRef.current,
-        transcript,
-        finalScore,
-        clampedFinalScore,
-        recordingSize: recordingBlob?.size ?? 0,
-        recognitionSessions: recognitionSessionRef.current,
-        recognitionEnded: recognitionEndedRef.current,
-        recordingStopped: recordingStoppedRef.current,
-      }
+      // const result = {
+      //   noiseFloor:
+      //     volumes.length > 0
+      //       ? [...volumes].sort((a, b) => a - b)[
+      //       Math.floor(volumes.length * 0.1)
+      //       ]
+      //       : 0,
+      //   speechThreshold: 0.005,
+      //   speechRatio:
+      //     volumes.length > 0
+      //       ? volumes.filter((v) => v >= 0.005).length /
+      //       volumes.length
+      //       : 0,
+      //   cv:
+      //     (() => {
+      //       const speechVolumes = volumes.filter((v) => v >= 0.005)
+      //       if (speechVolumes.length < 2) return 0
+      //       const mean =
+      //         speechVolumes.reduce((a, b) => a + b, 0) /
+      //         speechVolumes.length
+      //       const variance =
+      //         speechVolumes.reduce(
+      //           (a, b) => a + (b - mean) ** 2,
+      //           0,
+      //         ) / speechVolumes.length
+      //       return mean > 0 ? Math.sqrt(variance) / mean : 0
+      //     })(),
+      //   rawVocalScore,
+      //   pacingScore,
+      //   repetitionScore,
+      //   fluencyScore,
+      //   vocalScore,
+      //   wordCount,
+      //   wordsPerMinute,
+      //   repeatedWordEvents,
+      //   repetitionRate,
+      //   finalTranscript: rebuildFinalTranscript(),
+      //   interimTranscript: interimTranscriptRef.current,
+      //   transcript,
+      //   finalScore,
+      //   clampedFinalScore,
+      //   recordingSize: recordingBlob?.size ?? 0,
+      //   recognitionSessions: recognitionSessionRef.current,
+      //   recognitionEnded: recognitionEndedRef.current,
+      //   recordingStopped: recordingStoppedRef.current,
+      // }
 
-      console.log(result)
+      // console.log(result)
 
       cleanup()
       setPhase('done')
@@ -613,10 +584,6 @@ export default function PersuasivePitchTest({
 
     window.clearInterval(countdownRef.current)
     window.clearTimeout(recognitionRestartRef.current)
-
-    console.log(
-      'Test finish requested. Waiting for final recognition + recording data...',
-    )
 
     /*
      * Stop recognition first. We intentionally wait for its `onend` event
@@ -695,10 +662,6 @@ export default function PersuasivePitchTest({
     recognition.onstart = () => {
       recognitionSessionRef.current += 1
 
-      console.log(
-        `Beginning SpeechRecognition session: ${recognitionSessionRef.current}`,
-      )
-
       /*
        * Each browser recognition start is a new logical session.
        * Result indices can safely begin at zero again because the session ID
@@ -736,12 +699,6 @@ export default function PersuasivePitchTest({
       }
 
       interimTranscriptRef.current = interimParts.join(' ').trim()
-
-      console.log('Speech recognition update:', {
-        session: sessionId,
-        final: rebuildFinalTranscript(),
-        interim: interimTranscriptRef.current,
-      })
     }
 
     recognition.onerror = (event) => {
@@ -760,11 +717,6 @@ export default function PersuasivePitchTest({
 
     recognition.onend = () => {
       recognitionEndedRef.current = true
-
-      console.log('Speech recognition ended.', {
-        session: recognitionSessionRef.current,
-        finishing: finishRequestedRef.current,
-      })
 
       if (finishRequestedRef.current) {
         maybeFinalize()
@@ -789,11 +741,6 @@ export default function PersuasivePitchTest({
           recognitionRestartAttemptsRef.current += 1
           recognitionEndedRef.current = false
           recognition.start()
-
-          console.log('Speech recognition (re)started.', {
-            session: recognitionSessionRef.current + 1,
-            attempt: recognitionRestartAttemptsRef.current,
-          })
         } catch (error) {
           recognitionEndedRef.current = true
 
@@ -908,13 +855,11 @@ export default function PersuasivePitchTest({
               'audio/webm;codecs=opus',
           },
         )
-
         console.log(
           'Complete recording:',
           completeRecording.size,
           'bytes',
         )
-
         maybeFinalize()
       }
 

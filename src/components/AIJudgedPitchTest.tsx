@@ -11,12 +11,10 @@ const PROMPTS = [
 
 type Phase = 'setup' | 'recording' | 'transcribing' | 'scoring' | 'done' | 'error'
 
-// Minimal ambient typing so TS doesn't complain about the vendor-prefixed Web Speech API
+// Minimal ambient typing so TS doesn't complain about the vendor-prefixed Web Speech API.
+// Avoid redeclaring the built-in `SpeechRecognition` property from lib.dom; use `any` casts
+// when reading the browser-specific constructor from `window`.
 declare global {
-  interface Window {
-    webkitSpeechRecognition?: new () => SpeechRecognitionLike
-    SpeechRecognition?: new () => SpeechRecognitionLike
-  }
   interface SpeechRecognitionLike {
     continuous: boolean
     interimResults: boolean
@@ -123,7 +121,8 @@ export default function AIJudgedPitchTest({ onComplete }: AIJudgedPitchTestProps
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          transcriptRef.current += event.results[i][0].transcript + ' '
+          const transcript = event.results[i]?.[0]?.transcript
+          if (transcript) transcriptRef.current += transcript + ' '
         }
       }
     }
