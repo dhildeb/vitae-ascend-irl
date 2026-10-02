@@ -613,6 +613,22 @@ const pitchExpressivenessAnchors: AnchorPoint[] = [
   { raw: 97, score: 20 },
 ]
 
+// Local linguistic-feature composite (0-100) from PersuasiveWritingTest —
+// content volume, lexical sophistication, sentence clarity, cohesion and
+// claim-marker density. Thin: the weighting/combination is original, even
+// though each individual feature is grounded in cited research.
+const persuasiveWritingAnchors: AnchorPoint[] = [
+  { raw: 10, score: 3 },
+  { raw: 20, score: 5 },
+  { raw: 35, score: 8 },
+  { raw: 50, score: 10 },
+  { raw: 60, score: 12 },
+  { raw: 70, score: 14 },
+  { raw: 80, score: 16 },
+  { raw: 90, score: 18 },
+  { raw: 98, score: 20 },
+]
+
 // Average absolute timing error (ms) tapping to a 100bpm beat, lower is better. Estimated.
 const rhythmAnchors: AnchorPoint[] = [
   { raw: 400, score: 3 },
@@ -1151,6 +1167,16 @@ export const TEST_DEFS: Record<TestId, TestDef> = {
     optional: true,
     anchors: aiJudgedAnchors,
   },
+  persuasive_writing: {
+    id: 'persuasive_writing',
+    label: 'Persuasive Writing',
+    unit: '0-100',
+    inputType: 'writing_pct',
+    hint: '4 minutes to write a persuasive response to a prompt. Scored locally on content volume, vocabulary, sentence clarity, and cohesive/argumentative language \u2014 no AI, nothing leaves your browser. Tests content, not delivery, as a direct complement to Persuasive Pitch.',
+    dataQuality: 'thin',
+    source: 'Original feature weighting; individual features grounded in Crossley & Kim 2014 persuasive-essay corpus research and argumentation-mining literature (claim-marker connectives)',
+    anchors: persuasiveWritingAnchors,
+  },
 }
 
 export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
@@ -1183,7 +1209,7 @@ export const STAT_TEST_GROUPS: Partial<Record<StatKey, StatTestGroup>> = {
     bonus: ['purpose_in_life'],
   },
   CHA: {
-    core: ['persuasive_pitch', 'rhythm_timing'],
+    core: ['persuasive_pitch', 'rhythm_timing', 'persuasive_writing'],
     alternatives: [['gci_self', 'gci_peer']],
     bonus: ['performance_background', 'ai_judged_pitch'],
   },

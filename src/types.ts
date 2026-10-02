@@ -51,6 +51,7 @@ export type TestId =
   | 'rhythm_timing'
   | 'performance_background'
   | 'ai_judged_pitch'
+  | 'persuasive_writing'
 
 export type InputType =
   | 'reps_bw_push' // reps, converted to est. kg via bodyweight * 0.70 * (1 + reps/30)
@@ -79,6 +80,7 @@ export type InputType =
   | 'rhythm_ms' // in-app tap-to-beat timing task, commits avg timing error
   | 'checklist_count' // in-app multi-select checklist, commits count checked
   | 'ai_judged_pct' // optional: records + transcribes + sends to Claude via the user's own API key
+  | 'writing_pct' // in-app persuasive-writing task, local linguistic-feature scoring, commits 0-100
 
 export interface TestLog {
   rawValue: number // the value as entered/measured: reps, cm, seconds, or kg
@@ -188,6 +190,7 @@ export const emptyTestsState = (): TestsState => ({
   rhythm_timing: { history: [] },
   performance_background: { history: [] },
   ai_judged_pitch: { history: [] },
+  persuasive_writing: { history: [] },
 })
 
 export const emptySheet = (): CharacterSheet => ({

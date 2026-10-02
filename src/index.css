@@ -1317,6 +1317,65 @@ input:focus-visible {
   transform: scale(1.1);
 }
 
+/* Persuasive Writing */
+
+.writing-test {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.writing-textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 12px;
+  border: 1.5px solid var(--parchment-line);
+  border-radius: 3px;
+  background: #fbf8f1;
+  color: var(--charcoal);
+}
+
+.writing-textarea:focus {
+  outline: 2px solid var(--ember);
+  outline-offset: 1px;
+}
+
+.writing-stats {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #6b6153;
+}
+
+.writing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.writing-wordcount {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #6b6153;
+}
+
+.writing-wordcount--low {
+  color: var(--ember);
+}
+
+.writing-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
 /* Performance Background checklist */
 
 .checklist-test {

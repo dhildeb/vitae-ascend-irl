@@ -22,6 +22,7 @@ import PersuasivePitchTest from './PersuasivePitchTest'
 import RhythmTimingTest from './RhythmTimingTest'
 import PerformanceBackgroundChecklist from './PerformanceBackgroundChecklist'
 import AIJudgedPitchTest from './AIJudgedPitchTest'
+import PersuasiveWritingTest from './PersuasiveWritingTest'
 
 interface TestModalProps {
   def: TestDef
@@ -58,6 +59,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
   const isRhythmGame = def.inputType === 'rhythm_ms'
   const isChecklist = def.inputType === 'checklist_count'
   const isAIJudged = def.inputType === 'ai_judged_pct'
+  const isWritingGame = def.inputType === 'writing_pct'
 
   const commit = (rawKg: number) => {
     const { score, derivedKg } = scoreTest(def.id, rawKg, bodyweightKg)
@@ -252,6 +254,7 @@ export default function TestModal({ def, bodyweightKg, onClose, onSubmit }: Test
         {isRhythmGame && <RhythmTimingTest onComplete={commit} />}
         {isChecklist && <PerformanceBackgroundChecklist onComplete={commit} />}
         {isAIJudged && <AIJudgedPitchTest onComplete={commit} />}
+        {isWritingGame && <PersuasiveWritingTest onComplete={commit} />}
 
         <p className="modal-source">Source: {def.source}</p>
       </div>
